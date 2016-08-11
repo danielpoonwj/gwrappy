@@ -11,8 +11,7 @@ def iterate_list(service, object_name, max_results=None, max_retries=3, filter_e
 
     if object_name in resp:
         resp_list = resp[object_name]
-        if filter_exp is not None:
-            resp_list = [x for x in resp_list if filter_exp(x)]
+        resp_list = filter(filter_exp, resp_list)
 
         object_list += resp_list
         object_count = len(object_list)
@@ -33,8 +32,7 @@ def iterate_list(service, object_name, max_results=None, max_retries=3, filter_e
 
         if object_name in resp:
             resp_list = resp[object_name]
-            if filter_exp is not None:
-                resp_list = [x for x in resp_list if filter_exp(x)]
+            resp_list = filter(filter_exp, resp_list)
 
             object_list += resp_list
             object_count = len(object_list)
