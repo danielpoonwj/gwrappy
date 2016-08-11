@@ -3,6 +3,7 @@ from time import sleep
 from gwrappy.service import get_service
 from gwrappy.iterator import iterate_list
 from gwrappy.errors import JobError, HttpError
+from gwrappy.bigquery.utils import JobResponse, TableResponse
 
 
 class BigqueryUtility:
@@ -55,10 +56,12 @@ class BigqueryUtility:
         )
 
     def get_job(self, project_id, job_id):
-        return self._service.jobs().get(
+        job_resp = self._service.jobs().get(
             projectId=project_id,
             jobId=job_id
         ).execute(num_retries=self._max_retries)
+
+        return JobResponse(job_resp)
 
     def get_table_info(self, project_id, dataset_id, table_id):
         return self._service.tables().get(
@@ -68,11 +71,16 @@ class BigqueryUtility:
         ).execute(num_retries=self._max_retries)
 
     def delete_table(self, project_id, dataset_id, table_id):
-        return self._service.tables().delete(
+        # if successful, will return empty string
+
+        job_resp = self._service.tables().delete(
             projectId=project_id,
             datasetId=dataset_id,
             tableId=table_id
         ).execute(num_retries=self._max_retries)
+
+        if len(job_resp) > 0:
+            raise AssertionError(job_resp)
 
     def _get_query_results(self, job_resp, page_token=None, max_results=None):
         resp = self._service.jobs().getQueryResults(
@@ -103,10 +111,10 @@ class BigqueryUtility:
         return job_resp
 
     def _iterate_job_results(self, job_resp, return_type, sleep_time):
-        assert return_type in ('list', 'dataframe')
+        assert return_type in ('list', 'dataframe', 'json')
 
         job_resp = self.poll_job_status(job_resp, sleep_time)
-        results_list = []
+        results = []
         query_resp = None
 
         while query_resp is None or 'pageToken' in query_resp:
@@ -121,21 +129,23 @@ class BigqueryUtility:
 
             # add column names as first row
             if page_token is None:
-                results_list.append([item['name'] for item in query_resp['schema']['fields']])
+                results.append([item['name'] for item in query_resp['schema']['fields']])
 
             # iterate through rows
             rows = query_resp.pop('rows', [])
             for row in rows:
-                results_list.append([item['v'] for item in row['f']])
+                results.append([item['v'] for item in row['f']])
 
             sleep(sleep_time)
 
         # only job_resp from getQueryResults has totalRows field, combined with return_resp
         job_resp[u'totalRows'] = query_resp.get('totalRows', u'0')
         if return_type == 'list':
-            return results_list, job_resp
+            return results, job_resp
 
-        elif return_type == 'dataframe':
+        # for dataframe and json
+        # json will be first converted to dataframe for proper typing
+        else:
             import pandas as pd
             from io import BytesIO
             import unicodecsv as csv
@@ -162,12 +172,12 @@ class BigqueryUtility:
 
             with BytesIO() as file_buffer:
                 csv_writer = csv.writer(file_buffer, lineterminator='\n')
-                csv_writer.writerows(results_list)
+                csv_writer.writerows(results)
                 file_buffer.seek(0)
 
                 timestamp_cols = [x['name'] for x in query_schema if x['type'] == 'TIMESTAMP']
 
-                results_df = pd.read_csv(
+                results = pd.read_csv(
                     file_buffer,
                     parse_dates=timestamp_cols,
                     date_parser=_convert_timestamp,
@@ -176,12 +186,19 @@ class BigqueryUtility:
                     dtype=_convert_dtypes(query_schema)
                 )
 
-            return results_df, job_resp
+            if return_type == 'dataframe':
+                return results, job_resp
+            elif return_type == 'json':
+                results = results.to_dict('records')
+                # pandas will return NaN, convert to native python None
+                results = [{k: v if pd.notnull(v) else None for k, v in x.iteritems()} for x in results]
+                return results, job_resp
 
-    def sync_query(self, project_id, query, return_type='list', sleep_time=1):
+    def sync_query(self, project_id, query, return_type='list', sleep_time=1, dry_run=False):
         request_body = {
             'query': query,
-            'timeoutMs': 0
+            'timeoutMs': 0,
+            'dryRun': dry_run
         }
 
         job_resp = self._service.jobs().query(
@@ -189,7 +206,11 @@ class BigqueryUtility:
             body=request_body
         ).execute(num_retries=self._max_retries)
 
-        return self._iterate_job_results(job_resp, return_type, sleep_time)
+        if not dry_run:
+            result, job_resp = self._iterate_job_results(job_resp, return_type, sleep_time)
+            return result, JobResponse(job_resp, 'sync')
+        else:
+            return job_resp
 
     def async_query(self, project_id, query, dest_project_id, dest_dataset_id, dest_table_id, udf=None,
                     return_type='list', sleep_time=1, **kwargs):
@@ -220,7 +241,8 @@ class BigqueryUtility:
             body=request_body
         ).execute(num_retries=self._max_retries)
 
-        return self._iterate_job_results(response, return_type, sleep_time)
+        result, job_resp = self._iterate_job_results(response, return_type, sleep_time)
+        return result, JobResponse(job_resp, 'async')
 
     def write_table(self, project_id, query, dest_project_id, dest_dataset_id, dest_table_id, udf=None,
                     wait_finish=True, sleep_time=1, **kwargs):
@@ -271,7 +293,14 @@ class BigqueryUtility:
         if wait_finish:
             job_resp = self.poll_job_status(job_resp, sleep_time)
 
-        return job_resp
+            # additional check to get total_rows
+            query_resp = self._get_query_results(
+                job_resp,
+                max_results=0
+            )
+            job_resp[u'totalRows'] = query_resp.get('totalRows', u'0')
+
+        return JobResponse(job_resp, 'write table')
 
     def write_view(self, query, dest_project_id, dest_dataset_id, dest_table_id, udf=None, overwrite_existing=True):
 
@@ -312,7 +341,7 @@ class BigqueryUtility:
             else:
                 raise e
 
-        return job_resp
+        return TableResponse(job_resp, 'write')
 
     def load_from_gcs(self, dest_project_id, dest_dataset_id, dest_table_id, schema, source_uris,
                       wait_finish=True, sleep_time=1, **kwargs):
@@ -350,7 +379,7 @@ class BigqueryUtility:
         if wait_finish:
             job_resp = self.poll_job_status(job_resp, sleep_time)
 
-        return job_resp
+        return JobResponse(job_resp, 'gcs')
 
     def export_to_gcs(self, source_project_id, source_dataset_id, source_table_id, dest_uris,
                       wait_finish=True, sleep_time=1, **kwargs):
@@ -385,7 +414,7 @@ class BigqueryUtility:
         if wait_finish:
             job_resp = self.poll_job_status(job_resp, sleep_time)
 
-        return job_resp
+        return JobResponse(job_resp)
 
     def copy_table(self, source_data, dest_project_id, dest_dataset_id, dest_table_id,
                    wait_finish=True, sleep_time=1, **kwargs):
@@ -407,7 +436,7 @@ class BigqueryUtility:
 
         request_body = {
             'jobReference': {
-                'projectId': dest_project_id['projectId']
+                'projectId': dest_project_id
             },
 
             'configuration': {
@@ -431,7 +460,7 @@ class BigqueryUtility:
         if wait_finish:
             job_resp = self.poll_job_status(job_resp, sleep_time)
 
-        return job_resp
+        return JobResponse(job_resp)
 
     def load_from_string(self, dest_project_id, dest_dataset_id, dest_table_id, schema, load_string,
                          wait_finish=True, sleep_time=1, **kwargs):
@@ -473,7 +502,7 @@ class BigqueryUtility:
         if wait_finish:
             job_resp = self.poll_job_status(job_resp, sleep_time)
 
-        return job_resp
+        return JobResponse(job_resp, 'string')
 
     def write_federated_table(self, dest_project_id, dest_dataset_id, dest_table_id, schema, source_uris,
                               overwrite_existing=True, **kwargs):
@@ -525,7 +554,7 @@ class BigqueryUtility:
             else:
                 raise e
 
-        return job_resp
+        return TableResponse(job_resp, 'write federated')
 
     def update_table_info(self, project_id, dataset_id, table_id, table_description=None, schema_fields=None):
         request_body = {
@@ -572,3 +601,15 @@ class BigqueryUtility:
         ).execute(num_retries=self._max_retries)
 
         return job_resp
+
+    def poll_resp_list(self, response_list, sleep_time=1):
+        # to use when setting wait_finish = False to insert jobs without waiting
+        # store initial responses in list and use this method to iterate and poll responses
+        assert isinstance(response_list, (list, tuple, set))
+
+        return_list = []
+
+        for response in response_list:
+            return_list.append(self.poll_job_status(response, sleep_time))
+
+        return return_list
