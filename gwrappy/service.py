@@ -4,6 +4,10 @@ SCOPES = {
     'bigquery': {
         'scope': 'https://www.googleapis.com/auth/bigquery',
         'version': 'v2'
+    },
+    'storage': {
+        'scope': 'https://www.googleapis.com/auth/cloud-platform',
+        'version': 'v1'
     }
 }
 
