@@ -29,9 +29,10 @@ class GcsResponse:
         setattr(self, 'full_path', 'gs://%s/%s' % (resp['bucket'], resp['name']))
 
     def __repr__(self):
-        return '[BigQuery] %s %s (%s)' % (
+        return '[GCS] %s %s %s(%s)' % (
             self.description,
             getattr(self, 'full_path'),
+            '%s ' % getattr(self, 'size') if hasattr(self, 'size') else '',
             '{m} Minutes {s} Seconds'.format(**getattr(self, 'time_taken'))
         )
 
