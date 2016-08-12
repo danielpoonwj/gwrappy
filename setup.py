@@ -13,7 +13,8 @@ requirements = [
     'humanize>=0.5.1',
     'pandas>=0.18.0',
     'unicodecsv>=0.14.1',
-    'pytz'
+    'pytz',
+    'tzlocal'
 ]
 
 setup(
@@ -35,7 +36,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
+        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7'
     ]
