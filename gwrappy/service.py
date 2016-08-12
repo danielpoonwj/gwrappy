@@ -8,6 +8,14 @@ SCOPES = {
     'storage': {
         'scope': 'https://www.googleapis.com/auth/cloud-platform',
         'version': 'v1'
+    },
+    'drive': {
+        'scope': 'https://www.googleapis.com/auth/drive',
+        'version': 'v3'
+    },
+    'gmail': {
+        'scope': 'https://mail.google.com/',
+        'version': 'v1'
     }
 }
 
@@ -17,7 +25,7 @@ def get_service(service_name, **kwargs):
 
     if 'json_credentials_path' in kwargs:
         # store in multistore_file by default, requires client_id as a key
-        assert 'client_id' in kwargs
+        assert 'client_id' in kwargs, 'client_id required when using json_credential_path'
 
         import httplib2
         from oauth2client.contrib import multistore_file
@@ -34,7 +42,7 @@ def get_service(service_name, **kwargs):
         if credentials is None or credentials.invalid:
             # rerun auth flow if credentials are missing or invalid
             # flow requires client secret file
-            assert 'client_secret_path' in kwargs
+            assert 'client_secret_path' in kwargs, 'Credentials invalid, client_secret_path required for reauthorization'
 
             from oauth2client.client import flow_from_clientsecrets
             from oauth2client.tools import run_flow
