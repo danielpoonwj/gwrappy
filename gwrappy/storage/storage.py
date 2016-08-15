@@ -12,6 +12,21 @@ from gwrappy.storage.utils import GcsResponse
 
 class GcsUtility:
     def __init__(self, **kwargs):
+        """
+        Initializes object for interacting with Bigquery API.
+
+        |  By default, Application Default Credentials are used.
+        |  If gcloud SDK isn't installed, credential files have to be specified using the kwargs *json_credentials_path* and *client_id*.
+
+        :keyword max_retries: Argument specified with each API call to natively handle retryable errors.
+        :type max_retries: integer
+        :keyword chunksize: Upload/Download chunk size
+        :type chunksize: integer
+        :keyword client_secret_path: File path for client secret JSON file. Only required if credentials are invalid or unavailable.
+        :keyword json_credentials_path: File path for automatically generated credentials.
+        :keyword client_id: Credentials are stored as a key-value pair per client_id to facilitate multiple clients using the same credentials file. For simplicity, using one's email address is sufficient.
+        """
+
         self._service = get_service('storage', **kwargs)
 
         self._max_retries = kwargs.get('max_retries', 3)
@@ -23,6 +38,18 @@ class GcsUtility:
         self._RETRYABLE_ERRORS = (HttpLib2Error, IOError)
 
     def list_buckets(self, project_id, max_results=None, filter_exp=None):
+        """
+        Abstraction of buckets().list() method with inbuilt iteration functionality. [https://cloud.google.com/storage/docs/json_api/v1/buckets/list]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param max_results: If None, all results are iterated over and returned.
+        :type max_results: integer
+        :param filter_exp: Function that filters entries if filter_exp evaluates to True.
+        :type filter_exp: function
+        :return: List of dictionary objects representing bucket resources.
+        """
+
         return iterate_list(
             self._service.buckets(),
             'items',
@@ -33,6 +60,20 @@ class GcsUtility:
         )
 
     def list_objects(self, bucket_name, max_results=None, prefix=None, filter_exp=None):
+        """
+        Abstraction of objects().list() method with inbuilt iteration functionality. [https://cloud.google.com/storage/docs/json_api/v1/objects/list]
+
+        :param bucket_name: Bucket identifier.
+        :type bucket_name: string
+        :param max_results: If None, all results are iterated over and returned.
+        :type max_results: integer
+        :param prefix: Pre-filter (on API call) results to objects whose names begin with this prefix.
+        :type prefix: string
+        :param filter_exp: Function that filters entries if filter_exp evaluates to True.
+        :type filter_exp: function
+        :return: List of dictionary objects representing object resources.
+        """
+
         return iterate_list(
             self._service.objects(),
             'items',
@@ -50,6 +91,16 @@ class GcsUtility:
         return object_name
 
     def get_object(self, bucket_name, object_name):
+        """
+        Abstraction of objects().get() method with inbuilt iteration functionality. [https://cloud.google.com/storage/docs/json_api/v1/objects/get]
+
+        :param bucket_name: Bucket identifier.
+        :type bucket_name: string
+        :param object_name: Can take string representation of object resource or list denoting path to object on GCS.
+        :type object_name: list or string
+        :return: Dictionary object representing object resource.
+        """
+
         resp = self._service.objects().get(
             bucket=bucket_name,
             object=self._parse_object_name(object_name)
@@ -58,6 +109,16 @@ class GcsUtility:
         return resp
 
     def delete_object(self, bucket_name, object_name):
+        """
+        Abstraction of objects().delete() method with inbuilt iteration functionality. [https://cloud.google.com/storage/docs/json_api/v1/objects/delete]
+
+        :param bucket_name: Bucket identifier.
+        :type bucket_name: string
+        :param object_name: Can take string representation of object resource or list denoting path to object on GCS.
+        :type object_name: list or string
+        :raises: AssertionError if unsuccessful. Response should be empty string if successful.
+        """
+
         resp = self._service.objects().delete(
             bucket=bucket_name,
             object=self._parse_object_name(object_name)
@@ -77,6 +138,19 @@ class GcsUtility:
         sleep(sleep_time)
 
     def download_object(self, bucket_name, object_name, write_path):
+        """
+        Downloads object in chunks.
+
+        :param bucket_name: Bucket identifier.
+        :type bucket_name: string
+        :param object_name: Can take string representation of object resource or list denoting path to object on GCS.
+        :type object_name: list or string
+        :param write_path: Local path to write object to.
+        :type write_path: string
+        :returns: GcsResponse object.
+        :raises: HttpError if non-retryable errors are encountered.
+        """
+
         resp_obj = GcsResponse('downloaded')
 
         req = self._service.objects().get_media(
@@ -109,11 +183,23 @@ class GcsUtility:
 
         resp_obj.load_resp(
             self.get_object(bucket_name, object_name),
-            override_updated=True
+            is_download=True
         )
         return resp_obj
 
     def upload_object(self, bucket_name, object_name, read_path):
+        """
+        Uploads object in chunks.
+
+        :param bucket_name: Bucket identifier.
+        :type bucket_name: string
+        :param object_name: Can take string representation of object resource or list denoting path to object on GCS.
+        :type object_name: list or string
+        :param write_path: Local path of object to upload.
+        :type write_path: string
+        :returns: GcsResponse object.
+        :raises: HttpError if non-retryable errors are encountered.
+        """
         resp_obj = GcsResponse('uploaded')
 
         media = MediaFileUpload(read_path, chunksize=self._chunksize, resumable=True)
@@ -147,7 +233,8 @@ class GcsUtility:
                 progressless_iters = 0
 
         resp_obj.load_resp(
-            resp
+            resp,
+            is_download=False
         )
 
         return resp_obj

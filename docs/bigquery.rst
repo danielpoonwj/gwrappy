@@ -9,8 +9,14 @@ BigqueryUtility
     :members:
 
 
-Misc Functions
---------------
+Misc Classes/Functions
+----------------------
+
+.. autoclass:: gwrappy.bigquery.utils.JobResponse
+    :members:
+
+.. autoclass:: gwrappy.bigquery.utils.TableResponse
+    :members:
 
 .. automodule:: gwrappy.bigquery.utils
     :members:
