@@ -15,7 +15,7 @@ class BigqueryUtility:
         |  If gcloud SDK isn't installed, credential files have to be specified using the kwargs *json_credentials_path* and *client_id*.
 
         :keyword max_retries: Argument specified with each API call to natively handle retryable errors.
-        :type max_results: integer
+        :type max_retries: integer
         :keyword client_secret_path: File path for client secret JSON file. Only required if credentials are invalid or unavailable.
         :keyword json_credentials_path: File path for automatically generated credentials.
         :keyword client_id: Credentials are stored as a key-value pair per client_id to facilitate multiple clients using the same credentials file. For simplicity, using one's email address is sufficient.
@@ -169,7 +169,7 @@ class BigqueryUtility:
         :type dataset_id: string
         :param table_id: Unique table identifier.
         :type table_id: string
-        :return: Empty string if successful.
+        :raises: AssertionError if unsuccessful. Response should be empty string if successful.
         """
 
         # if successful, will return empty string
