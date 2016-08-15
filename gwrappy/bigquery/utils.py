@@ -5,6 +5,14 @@ import humanize
 
 class JobResponse:
     def __init__(self, resp, description=None):
+        """
+        Wrapper for Bigquery job responses, mainly for calculating/parsing job statistics into human readable formats for logging.
+
+        :param resp: Dictionary representation of a job resource.
+        :type resp: dictionary
+        :param description: Optional string descriptor for specific function of job.
+        """
+
         assert isinstance(resp, dict)
         assert resp['kind'].split('#')[-1] == 'job'
         assert len(resp['configuration'].keys()) == 1
@@ -67,6 +75,14 @@ class JobResponse:
 
 class TableResponse:
     def __init__(self, resp, description=None):
+        """
+        Wrapper for Bigquery table resources, mainly for calculating/parsing job statistics into human readable formats for logging.
+
+        :param resp: Dictionary representation of a table resource.
+        :type resp: dictionary
+        :param description: Optional string descriptor for table.
+        """
+
         assert isinstance(resp, dict)
         assert resp['kind'].split('#')[-1] == 'table'
 
@@ -98,9 +114,11 @@ class TableResponse:
 
 def read_sql(read_path, **kwargs):
     """
-    :param read_path: file path for sql query
-    :param kwargs: if present, do string substitution
-    :return: query string
+    Reads text file, performing string substitution using str.format() method if necessary.
+
+    :param read_path: File path containing SQL query.
+    :param kwargs: Key-Value pairs referencing {key} within query for substitution.
+    :return: Query string.
     """
 
     assert os.path.exists(read_path)
@@ -115,6 +133,13 @@ def read_sql(read_path, **kwargs):
 
 
 def bq_schema_from_df(input_df):
+    """
+    Derive Bigquery Schema from Pandas Dataframe object.
+
+    :param input_df: Pandas Dataframe object
+    :return: List of dictionaries which can be fed directly as Bigquery schemas.
+    """
+
     dtype_df = input_df.dtypes.reset_index(drop=False)
     dtype_df = dtype_df.rename(columns={'index': 'name', 0: 'type'})
 
@@ -136,10 +161,13 @@ def bq_schema_from_df(input_df):
 
 def file_to_string(f, source_format='csv'):
     """
-    For load_from_string method
-    :param f: accepts file paths, objects: list of lists/dicts, dataframe, string representation of json list
-    :param source_format: expected format, particularly when reading from a file
-    :return: string representation of object/file contents
+    Specifically for BigqueryUtility().load_from_string()
+
+    :param f: Object to convert to string.
+    :type f: file path, list of lists/dicts, dataframe, or string representation of json list
+    :param source_format: Indicates format of input data. Accepted values are "csv" and "json".
+    :type source_format: string
+    :return: String representation of object/file contents
     """
 
     assert source_format.lower() in ('csv', 'json')

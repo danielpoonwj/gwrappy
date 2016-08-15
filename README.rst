@@ -4,18 +4,14 @@ gwrappy
 
 
 .. image:: https://img.shields.io/pypi/v/gwrappy.svg
-        :target: https://pypi.python.org/pypi/gwrappy
+    :target: https://pypi.python.org/pypi/gwrappy
 
 .. image:: https://readthedocs.org/projects/gwrappy/badge/?version=latest
-        :target: https://gwrappy.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-.. image:: https://pyup.io/repos/github/danielpoonwj/gwrappy/shield.svg
-     :target: https://pyup.io/repos/github/danielpoonwj/gwrappy/
-     :alt: Updates
+    :target: https://gwrappy.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 
-User friendly wrapper for Google APIs
+User friendly wrapper for Google APIs.
 
 
 * Free software: Apache Software License 2.0
@@ -25,7 +21,41 @@ User friendly wrapper for Google APIs
 Features
 --------
 
-* TODO
+* Easily connect to the following Google APIs (more to come eventually)
+    * BigQuery
+    * Cloud Storage
+    * Drive
+    * Gmail
+
+* Convenience functions with a focus on simplicity and usability
+
+
+Authors
+-------
+
+.. toctree::
+   :maxdepth: 2
+
+   authors
+
+
+Contributing
+------------
+
+.. toctree::
+   :maxdepth: 2
+
+   contributing
+
+
+History
+-------
+
+.. toctree::
+   :maxdepth: 2
+
+   history
+
 
 Credits
 -------

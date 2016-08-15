@@ -8,11 +8,34 @@ from gwrappy.bigquery.utils import JobResponse, TableResponse
 
 class BigqueryUtility:
     def __init__(self, **kwargs):
+        """
+        Initializes object for interacting with Bigquery API.
+
+        |  By default, Application Default Credentials are used.
+        |  If gcloud SDK isn't installed, credential files have to be specified using the kwargs *json_credentials_path* and *client_id*.
+
+        :keyword max_retries: Argument specified with each API call to natively handle retryable errors.
+        :type max_results: integer
+        :keyword client_secret_path: File path for client secret JSON file. Only required if credentials are invalid or unavailable.
+        :keyword json_credentials_path: File path for automatically generated credentials.
+        :keyword client_id: Credentials are stored as a key-value pair per client_id to facilitate multiple clients using the same credentials file. For simplicity, using one's email address is sufficient.
+        """
+
         self._service = get_service('bigquery', **kwargs)
 
         self._max_retries = kwargs.get('max_retries', 3)
 
     def list_projects(self, max_results=None, filter_exp=None):
+        """
+        Abstraction of projects().list() method with inbuilt iteration functionality. [https://cloud.google.com/bigquery/docs/reference/v2/projects/list]
+
+        :param max_results: If None, all results are iterated over and returned.
+        :type max_results: integer
+        :param filter_exp: Function that filters entries if filter_exp evaluates to True.
+        :type filter_exp: function
+        :return: List of dictionary objects representing project resources.
+        """
+
         return iterate_list(
             self._service.projects(),
             'projects',
@@ -22,6 +45,22 @@ class BigqueryUtility:
          )
 
     def list_jobs(self, project_id, state_filter=None, show_all=False, max_results=None, filter_exp=None):
+        """
+        Abstraction of jobs().list() method with inbuilt iteration functionality. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/list]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param state_filter: Pre-filter API request for job state. Acceptable values are "done", "pending" and "running". [Equivalent API param: stateFilter]
+        :type state_filter: boolean
+        :param show_all: Whether to display jobs owned by all users in the project. [Equivalent API param: allUsers]
+        :type show_all: boolean
+        :param max_results: If None, all results are iterated over and returned.
+        :type max_results: integer
+        :param filter_exp: Function that filters entries if filter_exp evaluates to True.
+        :type filter_exp: integer
+        :return: List of dictionary objects representing job resources.
+        """
+
         return iterate_list(
             self._service.jobs(),
             'jobs',
@@ -34,6 +73,20 @@ class BigqueryUtility:
          )
 
     def list_datasets(self, project_id, show_all=False, max_results=None, filter_exp=None):
+        """
+        Abstraction of datasets().list() method with inbuilt iteration functionality. [https://cloud.google.com/bigquery/docs/reference/v2/datasets/list]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param show_all: Include hidden datasets generated when running queries on the UI.
+        :type show_all: boolean
+        :param max_results: If None, all results are iterated over and returned.
+        :type max_results: integer
+        :param filter_exp: Function that filters entries if filter_exp evaluates to True.
+        :type filter_exp: function
+        :return: List of dictionary objects representing dataset resources.
+        """
+
         return iterate_list(
             self._service.datasets(),
             'datasets',
@@ -45,6 +98,20 @@ class BigqueryUtility:
         )
 
     def list_tables(self, project_id, dataset_id, max_results=None, filter_exp=None):
+        """
+        Abstraction of tables().list() method with inbuilt iteration functionality. [https://cloud.google.com/bigquery/docs/reference/v2/tables/list]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param dataset_id: Unique dataset identifier.
+        :type dataset_id: string
+        :param max_results: If None, all results are iterated over and returned.
+        :type max_results: integer
+        :param filter_exp: Function that filters entries if filter_exp evaluates to True.
+        :type filter_exp: function
+        :return: List of dictionary objects representing table resources.
+        """
+
         return iterate_list(
             self._service.tables(),
             'tables',
@@ -56,14 +123,36 @@ class BigqueryUtility:
         )
 
     def get_job(self, project_id, job_id):
+        """
+        Abstraction of jobs().get() method. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/get]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param job_id: Unique job identifier.
+        :type job_id: string
+        :return: Dictionary object representing job resource.
+        """
+
         job_resp = self._service.jobs().get(
             projectId=project_id,
             jobId=job_id
         ).execute(num_retries=self._max_retries)
 
-        return JobResponse(job_resp)
+        return job_resp
 
     def get_table_info(self, project_id, dataset_id, table_id):
+        """
+        Abstraction of tables().get() method. [https://cloud.google.com/bigquery/docs/reference/v2/tables/get]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param dataset_id: Unique dataset identifier.
+        :type dataset_id: string
+        :param table_id: Unique table identifier.
+        :type table_id: string
+        :return: Dictionary object representing table resource.
+        """
+
         return self._service.tables().get(
             projectId=project_id,
             datasetId=dataset_id,
@@ -71,6 +160,18 @@ class BigqueryUtility:
         ).execute(num_retries=self._max_retries)
 
     def delete_table(self, project_id, dataset_id, table_id):
+        """
+        Abstraction of tables().delete() method. [https://cloud.google.com/bigquery/docs/reference/v2/tables/delete]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param dataset_id: Unique dataset identifier.
+        :type dataset_id: string
+        :param table_id: Unique table identifier.
+        :type table_id: string
+        :return: Empty string if successful.
+        """
+
         # if successful, will return empty string
 
         job_resp = self._service.tables().delete(
@@ -94,13 +195,24 @@ class BigqueryUtility:
         return resp
 
     def poll_job_status(self, job_resp, sleep_time=1):
+        """
+        Check status of job until status is "DONE".
+
+        :param job_resp: Representation of job resource.
+        :type job_resp: dictionary
+        :param sleep_time: Time to pause (seconds) between polls.
+        :type sleep_time: integer
+        :return: Dictionary object representing job resource's final state.
+        :raises: JobError object if an error is discovered after job finishes running.
+        """
+
         status_state = None
 
         while not status_state == 'DONE':
-            job_resp = self._service.jobs().get(
-                projectId=job_resp['jobReference']['projectId'],
-                jobId=job_resp['jobReference']['jobId']
-            ).execute(num_retries=self._max_retries)
+            job_resp = self.get_job(
+                project_id=job_resp['jobReference']['projectId'],
+                job_id=job_resp['jobReference']['jobId']
+            )
 
             status_state = job_resp['status']['state']
             sleep(sleep_time)
@@ -195,6 +307,23 @@ class BigqueryUtility:
                 return results, job_resp
 
     def sync_query(self, project_id, query, return_type='list', sleep_time=1, dry_run=False):
+        """
+        Abstraction of jobs().query() method, iterating and parsing query results. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/query]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param query: SQL query
+        :type query: string
+        :param return_type: Format for result to be returned. Accepted types are "list", "dataframe", and "json".
+        :type return_type: string
+        :param sleep_time: Time to pause (seconds) between polls.
+        :type sleep_time: integer
+        :param dry_run: Basic statistics about the query, without actually running it. Mainly for testing or estimating amount of data processed.
+        :type dry_run: boolean
+        :return: If not dry_run: result in specified type, JobResponse object. If dry_run: Dictionary object representing expected query statistics.
+        :raises: JobError object if an error is discovered after job finishes running.
+        """
+
         request_body = {
             'query': query,
             'timeoutMs': 0,
@@ -214,6 +343,36 @@ class BigqueryUtility:
 
     def async_query(self, project_id, query, dest_project_id, dest_dataset_id, dest_table_id, udf=None,
                     return_type='list', sleep_time=1, **kwargs):
+        """
+        Abstraction of jobs().insert() method for **query** job, iterating and parsing query results. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/insert]
+
+        Asynchronous queries always write to an intermediate (destination) table.
+
+        |  This query method is preferable over sync_query if:
+        |  1. Large results are returned.
+        |  2. UDF functions are required.
+        |  3. Results returned also need to be stored in a table.
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param query: SQL query
+        :type query: string
+        :param dest_project_id: Unique project identifier of destination table.
+        :type dest_project_id: string
+        :param dest_dataset_id: Unique dataset identifier of destination table.
+        :type dest_dataset_id: string
+        :param dest_table_id: Unique table identifier of destination table.
+        :type dest_table_id: string
+        :param udf: One or more UDF functions if required by the query.
+        :type udf: string or list
+        :param return_type: Format for result to be returned. Accepted types are "list", "dataframe", and "json".
+        :type return_type: string
+        :param sleep_time: Time to pause (seconds) between polls.
+        :type sleep_time: integer
+        :keyword writeDisposition: (Optional) Config kwarg that determines table writing behaviour.
+        :return: result in specified type, JobResponse object.
+        :raises: JobError object if an error is discovered after job finishes running.
+        """
 
         request_body = {
             'jobReference': {
@@ -225,13 +384,14 @@ class BigqueryUtility:
                     'userDefinedFunctionResources': udf,
 
                     'query': query,
-                    'allowLargeResults': kwargs.get('allowLargeResults', 'true'),
+                    'allowLargeResults': 'true',
                     'destinationTable': {
                         'projectId': dest_project_id,
                         'datasetId': dest_dataset_id,
                         'tableId': dest_table_id,
                     },
-                    'writeDisposition': kwargs.get('writeDisposition', 'WRITE_TRUNCATE')
+                    'writeDisposition': kwargs.get('writeDisposition', 'WRITE_TRUNCATE'),
+                    'flattenResults': kwargs.get('flattenResults', None)
                 }
             }
         }
@@ -246,6 +406,29 @@ class BigqueryUtility:
 
     def write_table(self, project_id, query, dest_project_id, dest_dataset_id, dest_table_id, udf=None,
                     wait_finish=True, sleep_time=1, **kwargs):
+        """
+        Abstraction of jobs().insert() method for **query** job, without returning results. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/insert]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param query: SQL query
+        :type query: string
+        :param dest_project_id: Unique project identifier of destination table.
+        :type dest_project_id: string
+        :param dest_dataset_id: Unique dataset identifier of destination table.
+        :type dest_dataset_id: string
+        :param dest_table_id: Unique table identifier of destination table.
+        :type dest_table_id: string
+        :param udf: One or more UDF functions if required by the query.
+        :type udf: string or list
+        :param wait_finish: Flag whether to poll job till completion. If set to false, multiple jobs can be submitted, repsonses stored, iterated over and polled till completion afterwards.
+        :type wait_finish: boolean
+        :param sleep_time: Time to pause (seconds) between polls.
+        :type sleep_time: integer
+        :keyword writeDisposition: (Optional) Config kwarg that determines table writing behaviour.
+        :return: If wait_finish: result in specified type, JobResponse object. If not wait_finish: JobResponse object.
+        :raises: If wait_finish: JobError object if an error is discovered after job finishes running.
+        """
 
         request_body = {
             'jobReference': {
@@ -257,7 +440,7 @@ class BigqueryUtility:
                     'userDefinedFunctionResources': udf,
 
                     'query': query,
-                    'allowLargeResults': kwargs.get('allowLargeResults', 'true'),
+                    'allowLargeResults': 'true',
                     'destinationTable': {
                         'projectId': dest_project_id,
                         'datasetId': dest_dataset_id,
@@ -303,6 +486,22 @@ class BigqueryUtility:
         return JobResponse(job_resp, 'write table')
 
     def write_view(self, query, dest_project_id, dest_dataset_id, dest_table_id, udf=None, overwrite_existing=True):
+        """
+        Views are analogous to a virtual table, functioning as a table but only returning results from the underlying query when called.
+
+        :param query: SQL query
+        :type query: string
+        :param dest_project_id: Unique project identifier of destination table.
+        :type dest_project_id: string
+        :param dest_dataset_id: Unique dataset identifier of destination table.
+        :type dest_dataset_id: string
+        :param dest_table_id: Unique table identifier of destination table.
+        :type dest_table_id: string
+        :param udf: One or more UDF functions if required by the query.
+        :type udf: string or list
+        :param overwrite_existing: Safety flag, would raise HttpError if table exists and overwrite_existing=False
+        :return: TableResponse object for the newly inserted table
+        """
 
         request_body = {
             'tableReference': {
@@ -345,6 +544,31 @@ class BigqueryUtility:
 
     def load_from_gcs(self, dest_project_id, dest_dataset_id, dest_table_id, schema, source_uris,
                       wait_finish=True, sleep_time=1, **kwargs):
+        """
+        |  For loading data from Google Cloud Storage.
+        |  Abstraction of jobs().insert() method for **load** job. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/insert]
+
+        :param dest_project_id: Unique project identifier of destination table.
+        :type dest_project_id: string
+        :param dest_dataset_id: Unique dataset identifier of destination table.
+        :type dest_dataset_id: string
+        :param dest_table_id: Unique table identifier of destination table.
+        :type dest_table_id: string
+        :param schema: Schema of input data (schema.fields[]) [https://cloud.google.com/bigquery/docs/reference/v2/tables]
+        :type schema: list of dictionaries
+        :param source_uris: One or more uris referencing GCS objects
+        :type source_uris: string or list
+        :param wait_finish: Flag whether to poll job till completion. If set to false, multiple jobs can be submitted, repsonses stored, iterated over and polled till completion afterwards.
+        :type wait_finish: boolean
+        :param sleep_time: Time to pause (seconds) between polls.
+        :type sleep_time: integer
+        :keyword writeDisposition: (Optional) Config kwarg that determines table writing behaviour.
+        :keyword sourceFormat: (Optional) Config kwarg that indicates format of input data.
+        :keyword skipLeadingRows: (Optional) Config kwarg for leading rows to skip. Defaults to 1 to account for headers if sourceFormat is CSV or default, 0 otherwise.
+        :keyword fieldDelimiter: (Optional) Config kwarg that indicates field delimiter.
+        :keyword allowQuotedNewlines: (Optional) Config kwarg indicating presence of quoted newlines in fields.
+        :return: JobResponse object
+        """
 
         request_body = {
             'jobReference': {
@@ -383,6 +607,28 @@ class BigqueryUtility:
 
     def export_to_gcs(self, source_project_id, source_dataset_id, source_table_id, dest_uris,
                       wait_finish=True, sleep_time=1, **kwargs):
+        """
+        |  For exporting data into Google Cloud Storage.
+        |  Abstraction of jobs().insert() method for **extract** job. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/insert]
+
+        :param source_project_id: Unique project identifier of source table.
+        :type source_project_id: string
+        :param source_dataset_id: Unique dataset identifier of source table.
+        :type source_dataset_id: string
+        :param source_table_id: Unique table identifier of source table.
+        :type source_table_id: string
+        :param dest_uris: One or more uris referencing GCS objects
+        :type dest_uris: string or list
+        :param wait_finish: Flag whether to poll job till completion. If set to false, multiple jobs can be submitted, repsonses stored, iterated over and polled till completion afterwards.
+        :type wait_finish: boolean
+        :param sleep_time: Time to pause (seconds) between polls.
+        :type sleep_time: integer
+        :keyword destinationFormat: (Optional) Config kwarg that indicates format of output data.
+        :keyword compression: (Optional) Config kwarg for type of compression applied.
+        :keyword fieldDelimiter: (Optional) Config kwarg that indicates field delimiter.
+        :keyword printHeader: (Optional) Config kwarg indicating if table headers should be written.
+        :return: JobResponse object
+        """
 
         request_body = {
             'jobReference': {
@@ -418,10 +664,24 @@ class BigqueryUtility:
 
     def copy_table(self, source_data, dest_project_id, dest_dataset_id, dest_table_id,
                    wait_finish=True, sleep_time=1, **kwargs):
-
         """
-        can copy multiple source tables to the same destination
-        source_data can be a list of dicts or a single dict
+        |  For copying existing table(s) to a new or existing table.
+        |  Abstraction of jobs().insert() method for **copy** job. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/insert]
+
+        :param source_data: Representations of single or multiple existing tables to copy from.
+        :param source_date: dictionary or list of dictionaries
+        :param dest_project_id: Unique project identifier of destination table.
+        :type dest_project_id: string
+        :param dest_dataset_id: Unique dataset identifier of destination table.
+        :type dest_dataset_id: string
+        :param dest_table_id: Unique table identifier of destination table.
+        :type dest_table_id: string
+        :param wait_finish: Flag whether to poll job till completion. If set to false, multiple jobs can be submitted, repsonses stored, iterated over and polled till completion afterwards.
+        :type wait_finish: boolean
+        :param sleep_time: Time to pause (seconds) between polls.
+        :type sleep_time: integer
+        :keyword writeDisposition: (Optional) Config kwarg that determines table writing behaviour.
+        :return: JobResponse object
         """
 
         required_keys = ['datasetId', 'projectId', 'tableId']
@@ -464,6 +724,32 @@ class BigqueryUtility:
 
     def load_from_string(self, dest_project_id, dest_dataset_id, dest_table_id, schema, load_string,
                          wait_finish=True, sleep_time=1, **kwargs):
+        """
+        |  For loading data from string representation of a file/object.
+        |  Can be used in conjunction with gwrappy.bigquery.utils.file_to_string()
+
+        :param dest_project_id: Unique project identifier of destination table.
+        :type dest_project_id: string
+        :param dest_dataset_id: Unique dataset identifier of destination table.
+        :type dest_dataset_id: string
+        :param dest_table_id: Unique table identifier of destination table.
+        :type dest_table_id: string
+        :param schema: Schema of input data (schema.fields[]) [https://cloud.google.com/bigquery/docs/reference/v2/tables]
+        :type schema: list of dictionaries
+        :param load_string: String representation of an object.
+        :type load_string: string
+        :param wait_finish: Flag whether to poll job till completion. If set to false, multiple jobs can be submitted, repsonses stored, iterated over and polled till completion afterwards.
+        :type wait_finish: boolean
+        :param sleep_time: Time to pause (seconds) between polls.
+        :type sleep_time: integer
+        :keyword writeDisposition: (Optional) Config kwarg that determines table writing behaviour.
+        :keyword sourceFormat: (Optional) Config kwarg that indicates format of input data.
+        :keyword skipLeadingRows: (Optional) Config kwarg for leading rows to skip. Defaults to 1 to account for headers if sourceFormat is CSV or default, 0 otherwise.
+        :keyword fieldDelimiter: (Optional) Config kwarg that indicates field delimiter.
+        :keyword allowQuotedNewlines: (Optional) Config kwarg indicating presence of quoted newlines in fields.
+        :return: JobResponse object
+        """
+
 
         from googleapiclient.http import MediaInMemoryUpload
 
@@ -506,6 +792,29 @@ class BigqueryUtility:
 
     def write_federated_table(self, dest_project_id, dest_dataset_id, dest_table_id, schema, source_uris,
                               overwrite_existing=True, **kwargs):
+        """
+        |  Imagine a View for Google Cloud Storage object(s).
+        |  Abstraction of jobs().insert() method for **load** job. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/insert]
+
+        :param dest_project_id: Unique project identifier of destination table.
+        :type dest_project_id: string
+        :param dest_dataset_id: Unique dataset identifier of destination table.
+        :type dest_dataset_id: string
+        :param dest_table_id: Unique table identifier of destination table.
+        :type dest_table_id: string
+        :param schema: Schema of input data (schema.fields[]) [https://cloud.google.com/bigquery/docs/reference/v2/tables]
+        :type schema: list of dictionaries
+        :param source_uris: One or more uris referencing GCS objects
+        :type source_uris: string or list
+        :param overwrite_existing: Safety flag, would raise HttpError if table exists and overwrite_existing=False
+        :keyword sourceFormat: (Optional) Config kwarg that indicates format of input data.
+        :keyword skipLeadingRows: (Optional) Config kwarg for leading rows to skip. Defaults to 1 to account for headers if sourceFormat is CSV or default, 0 otherwise.
+        :keyword fieldDelimiter: (Optional) Config kwarg that indicates field delimiter.
+        :keyword compression: (Optional) Config kwarg for type of compression applied.
+        :keyword allowQuotedNewlines: (Optional) Config kwarg indicating presence of quoted newlines in fields.
+        :return: TableResponse object
+        """
+
 
         request_body = {
             'tableReference': {
@@ -556,7 +865,24 @@ class BigqueryUtility:
 
         return TableResponse(job_resp, 'write federated')
 
-    def update_table_info(self, project_id, dataset_id, table_id, table_description=None, schema_fields=None):
+    def update_table_info(self, project_id, dataset_id, table_id, table_description=None, schema=None):
+        """
+        Abstraction of tables().patch() method. [https://cloud.google.com/bigquery/docs/reference/v2/tables/patch]
+
+        :param project_id: Unique project identifier.
+        :type project_id: string
+        :param dataset_id: Unique dataset identifier.
+        :type dataset_id: string
+        :param table_id: Unique table identifier.
+        :type table_id: string
+        :param table_description: Optional description for table. If None, would not overwrite existing description.
+        :type table_description: string
+        :param schema_fields:
+        :param schema: Schema fields to change (schema.fields[]) [https://cloud.google.com/bigquery/docs/reference/v2/tables]
+        :type schema: list of dictionaries
+        :return: TableResponse
+        """
+
         request_body = {
             'tableReference': {
                 'projectId': project_id,
@@ -568,9 +894,9 @@ class BigqueryUtility:
         if table_description is not None:
             request_body['description'] = table_description
 
-        if schema_fields is not None:
-            assert isinstance(schema_fields, list)
-            assert all([isinstance(x, dict) for x in schema_fields])
+        if schema is not None:
+            assert isinstance(schema, list)
+            assert all([isinstance(x, dict) for x in schema])
 
             original_fields = self.get_table_info(
                 project_id,
@@ -581,9 +907,9 @@ class BigqueryUtility:
             # all fields have to be supplied even with table patch, this method checks and updates original fields
             # this method won't support adding new fields to prevent potentially accidentally adding etc
             # checks that all supplied schema fields are already existing fields
-            assert all([schema_field['name'] in [x['name'] for x in original_fields] for schema_field in schema_fields])
+            assert all([schema_field['name'] in [x['name'] for x in original_fields] for schema_field in schema])
 
-            for schema_field in schema_fields:
+            for schema_field in schema:
                 for original_field in original_fields:
                     if schema_field['name'] == original_field['name']:
                         original_field.update(schema_field)
@@ -600,9 +926,18 @@ class BigqueryUtility:
             body=request_body
         ).execute(num_retries=self._max_retries)
 
-        return job_resp
+        return TableResponse(job_resp)
 
     def poll_resp_list(self, response_list, sleep_time=1):
+        """
+        Convenience function for iterating and polling list of responses collected with jobs wait_finish=False
+
+        :param response_list: List of response objects
+        :type response_list: list of dicts or JobResponse objects
+        :param sleep_time: Time to pause (seconds) between polls.
+        :type sleep_time: integer
+        :return: List of dictionary objects representing job resource's final state.
+        """
         # to use when setting wait_finish = False to insert jobs without waiting
         # store initial responses in list and use this method to iterate and poll responses
         assert isinstance(response_list, (list, tuple, set))
@@ -610,6 +945,10 @@ class BigqueryUtility:
         return_list = []
 
         for response in response_list:
-            return_list.append(self.poll_job_status(response, sleep_time))
+            if isinstance(response, JobResponse):
+                return_list.append(self.poll_job_status(response.resp, sleep_time))
+            else:
+                assert isinstance(response, dict)
+                return_list.append(self.poll_job_status(response, sleep_time))
 
         return return_list
