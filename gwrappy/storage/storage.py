@@ -195,8 +195,8 @@ class GcsUtility:
         :type bucket_name: string
         :param object_name: Can take string representation of object resource or list denoting path to object on GCS.
         :type object_name: list or string
-        :param write_path: Local path of object to upload.
-        :type write_path: string
+        :param read_path: Local path of object to upload.
+        :type read_path: string
         :returns: GcsResponse object.
         :raises: HttpError if non-retryable errors are encountered.
         """

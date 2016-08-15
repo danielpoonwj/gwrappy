@@ -22,7 +22,7 @@ class GcsResponse:
 
         :param resp: Response from API
         :type resp: dictionary
-        :param is_download: Calculates time taken based on "updated" field in response if upload, and based on stop time if download
+        :param is_download: Calculates time taken based on 'updated' field in response if upload, and based on stop time if download
         :type is_download: boolean
         """
 
