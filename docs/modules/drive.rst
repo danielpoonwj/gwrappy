@@ -1,9 +1,9 @@
-=============
-Cloud Storage
-=============
+============
+Google Drive
+============
 
-GcsUtility
-----------
+DriveUtility
+------------
 
 .. autoclass:: gwrappy.drive.DriveUtility
     :members:

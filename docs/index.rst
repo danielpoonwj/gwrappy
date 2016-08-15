@@ -21,7 +21,8 @@ Documentation
 -------------
 
 .. toctree::
+    :maxdepth: 2
 
-    bigquery
-    storage
-    drive
+    modules/bigquery
+    modules/storage
+    modules/drive
