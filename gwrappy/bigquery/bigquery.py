@@ -1,7 +1,7 @@
 from time import sleep
 
 from gwrappy.service import get_service
-from gwrappy.iterator import iterate_list
+from gwrappy.utils import iterate_list
 from gwrappy.errors import JobError, HttpError
 from gwrappy.bigquery.utils import JobResponse, TableResponse
 

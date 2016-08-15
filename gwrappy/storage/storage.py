@@ -5,7 +5,7 @@ from httplib2 import HttpLib2Error
 
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from gwrappy.service import get_service
-from gwrappy.iterator import iterate_list
+from gwrappy.utils import iterate_list
 from gwrappy.errors import HttpError
 from gwrappy.storage.utils import GcsResponse
 
