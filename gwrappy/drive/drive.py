@@ -9,6 +9,17 @@ from gwrappy.drive.utils import DriveResponse
 
 class DriveUtility:
     def __init__(self, json_credentials_path, client_id, **kwargs):
+        """
+        Initializes object for interacting with Bigquery API.
+
+        :param client_secret_path: File path for client secret JSON file. Only required if credentials are invalid or unavailable.
+        :param json_credentials_path: File path for automatically generated credentials.
+        :param client_id: Credentials are stored as a key-value pair per client_id to facilitate multiple clients using the same credentials file. For simplicity, using one's email address is sufficient.
+        :keyword max_retries: Argument specified with each API call to natively handle retryable errors.
+        :type max_retries: integer
+        :keyword chunksize: Upload/Download chunk size
+        :type chunksize: integer
+        """
         self._service = get_service('drive', json_credentials_path=json_credentials_path, client_id=client_id, **kwargs)
 
         self._max_retries = kwargs.get('max_retries', 3)
@@ -18,8 +29,11 @@ class DriveUtility:
 
     def get_account_info(self, fields=None):
         """
-        :param fields: check api documentation for accepted fields. can be list or string
-        :return: json response
+        Abstraction of about().get() method. [https://developers.google.com/drive/v3/reference/about/get]
+
+        :param fields: Available properties can be found here: https://developers.google.com/drive/v3/reference/about
+        :type fields: list or ", " delimited string
+        :return: Dictionary object representation of About resource.
         """
         if fields is None:
             fields = [
@@ -36,6 +50,16 @@ class DriveUtility:
         ).execute(num_retries=self._max_retries)
 
     def list_files(self, max_results=None, **kwargs):
+        """
+        Abstraction of files().list() method with inbuilt iteration functionality. [https://developers.google.com/drive/v3/reference/files/list]
+
+        :param max_results: If None, all results are iterated over and returned.
+        :type max_results: integer
+        :keyword fields: Available properties can be found here: https://developers.google.com/drive/v3/reference/about
+        :keyword spaces: A comma-separated list of spaces to query within the corpus. Supported values are 'drive', 'appDataFolder' and 'photos'.
+        :keyword q: A query for filtering the file results. Reference here: https://developers.google.com/drive/v3/web/search-parameters
+        :return: List of dictionary objects representing file resources.
+        """
 
         fields = kwargs.get('fields', None)
         if isinstance(fields, list):
@@ -56,10 +80,13 @@ class DriveUtility:
 
     def get_file(self, file_id, fields=None):
         """
-        Get file metadata
-        :param file_id: unique id for each file. check on UI or by list_files()
-        :param fields: check api documentation for accepted fields. can be list or string
-        :return: json response
+        Get file metadata.
+
+        :param file_id: Unique file id. Check on UI or by list_files().
+        :type file_id: string
+        :param fields: Available properties can be found here: https://developers.google.com/drive/v3/reference/about
+        :type fields: list or ", " delimited string
+        :return: Dictionary object representing file resource.
         """
 
         if fields is None:
@@ -82,6 +109,21 @@ class DriveUtility:
         return resp
 
     def download_file(self, file_id, write_path, page_num=None, output_type=None):
+        """
+        Downloads object.
+
+        :param file_id: Unique file id. Check on UI or by list_files().
+        :type file_id: string
+        :param write_path: Local path to write object to.
+        :type write_path: string
+        :param page_num: Only applicable to Google Sheets. Check **gid** param in URL.
+        :type page_num: integer
+        :param output_type: Only applicable to Google Sheets. Can be directly downloaded as list or Pandas dataframe.
+        :type output_type: string. 'list' or 'dataframe'
+        :returns: If Google Sheet and output_type specified: result in selected type, DriveResponse object. Else DriveResponse object.
+        :raises: HttpError if non-retryable errors are encountered.
+        """
+
         drive_resp = DriveResponse('downloaded')
 
         file_metadata = self.get_file(file_id)
@@ -126,16 +168,22 @@ class DriveUtility:
                 while done is False:
                     status, done = downloader.next_chunk(num_retries=self._max_retries)
 
-        drive_resp.load_resp(file_metadata, True)
+        drive_resp.load_resp(
+            file_metadata,
+            is_download=True
+        )
         return drive_resp
 
-    def upload_file(self, read_path, overwrite=True, **kwargs):
+    def upload_file(self, read_path, overwrite_existing=True, **kwargs):
         """
-        Creates file if it doesn't exist, updates if it does
-        :param read_path: upload file path
-        :param overwrite: safety param to prevent overwriting existing files
-        :param kwargs: https://developers.google.com/drive/v3/reference/files/ create or update for valid Request Body kwargs
-        :return: json response
+        Creates file if it doesn't exist, updates if it does.
+
+        :param read_path: Local path of object to upload.
+        :type read_path: string
+        :param overwrite_existing: Safety flag, would raise ValueError if object exists and overwrite_existing=False
+        :type overwrite_existing: boolean
+        :param kwargs: Key-Value pairs of Request Body params. Reference here: https://developers.google.com/drive/v3/reference/files
+        :return: DriveResponse object.
         """
         drive_resp = DriveResponse('uploaded')
 
@@ -170,7 +218,7 @@ class DriveUtility:
                 fields='id, name, size, modifiedTime, parents'
             ).execute(num_retries=self._max_retries)
 
-        elif overwrite:
+        elif overwrite_existing:
             resp = self._service.files().update(
                 fileId=existing_files[0]['id'],
                 media_body=media,
@@ -181,5 +229,8 @@ class DriveUtility:
         else:
             raise ValueError('Existing file found, set overwrite=True to overwrite file')
 
-        drive_resp.load_resp(resp)
+        drive_resp.load_resp(
+            resp,
+            is_download=False
+        )
         return drive_resp

@@ -5,13 +5,28 @@ import humanize
 
 class DriveResponse:
     def __init__(self, description):
+        """
+        Wrapper for Drive upload and download responses, mainly for calculating/parsing job statistics into human readable formats for logging.
+
+        :param description: String descriptor for specific function of job.
+        """
+
         self.description = description.strip().title()
         self.start()
 
     def start(self):
         setattr(self, 'start_time', datetime.now(UTC))
 
-    def load_resp(self, resp, override_updated=False):
+    def load_resp(self, resp, is_download=False):
+        """
+        Loads json response from API.
+
+        :param resp: Response from API
+        :type resp: dictionary
+        :param is_download: Calculates time taken based on 'modifiedTime' field in response if upload, and based on stop time if download
+        :type is_download: boolean
+        """
+
         assert isinstance(resp, dict)
         setattr(self, 'resp', resp)
 
@@ -20,7 +35,7 @@ class DriveResponse:
         except KeyError:
             pass
 
-        if override_updated:
+        if is_download:
             updated_at = datetime.now(UTC)
         else:
             updated_at = UTC.localize(datetime.strptime(resp['modifiedTime'], '%Y-%m-%dT%H:%M:%S.%fZ'))
