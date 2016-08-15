@@ -1,16 +1,16 @@
-======================
-Bigquery Documentation
-======================
+========
+BigQuery
+========
 
 BigqueryUtility
 ---------------
 
 .. autoclass:: gwrappy.bigquery.BigqueryUtility
-   :members:
+    :members:
 
 
 Misc Functions
 --------------
 
 .. automodule:: gwrappy.bigquery.utils
-   :members:
+    :members:
