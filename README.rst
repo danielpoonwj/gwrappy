@@ -14,10 +14,6 @@ gwrappy
 User friendly wrapper for Google APIs.
 
 
-* Free software: Apache Software License 2.0
-* Documentation: https://gwrappy.readthedocs.io.
-
-
 Features
 --------
 
@@ -27,41 +23,34 @@ Features
     * Drive
     * Gmail
 
-* Convenience functions with a focus on simplicity and usability
+.. code-block:: python
+
+    # BigQuery
+    from gwrappy.bigquery import BigqueryUtility
+    bq_obj = BigqueryUtility()
+    results = bq_obj.sync_query('my_project', 'SELECT * FROM [foo.bar]')
+
+    # Cloud Storage
+    from gwrappy.storage import GcsUtility
+    gcs_obj = GcsUtility()
+    gcs_obj.download_object('bucket_name', 'object_name', 'path/to/write')
+    gcs_obj.upload_object('bucket_name', 'object_name', 'path/to/read')
+
+    # Drive
+    from gwrappy.drive import DriveUtility
+    drive_obj = DriveUtility(json_credentials_path, client_id)
+    drive_obj.download_object('file_id', 'path/to/write')
+    drive_obj.upload_file('path/to/read')
+
+    # Gmail
+    from gwrappy.gmail import GmailUtility
+    gmail_obj = GmailUtility(json_credentials_path, client_id)
+    gmail_obj.send_email(sender='Daniel Poon', to=['recipient_1@xx.com', 'recipient_2@yy.com'], subject='Hello World!', message_text='My First Email')
 
 
-Authors
--------
-
-.. toctree::
-   :maxdepth: 2
-
-   authors
-
-
-Contributing
+Installation
 ------------
 
-.. toctree::
-   :maxdepth: 2
+.. code-block:: bash
 
-   contributing
-
-
-History
--------
-
-.. toctree::
-   :maxdepth: 2
-
-   history
-
-
-Credits
--------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-
+    $ pip install gwrappy

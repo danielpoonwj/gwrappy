@@ -21,8 +21,9 @@ Documentation
 -------------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     modules/bigquery
     modules/storage
     modules/drive
+    modules/gmail

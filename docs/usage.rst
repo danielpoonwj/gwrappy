@@ -29,7 +29,7 @@ Authentication flow with client_secret.json is only required once per service, t
     from gwrappy.bigquery import BigqueryUtility
     secret_path = path/to/client_secret.json
     cred_path = path/to/credentials.json
-    client_id = me@xx.com
+    client_id = me@gmail.com
 
     bq_obj = BigqueryUtility(
         client_secret_path=secret_path,
