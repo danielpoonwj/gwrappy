@@ -12,10 +12,10 @@ from gwrappy.utils import datetime_to_timestamp
 
 def generate_q(**kwargs):
     """
-    :param kwargs: valid key:value pairs can be found here https://support.google.com/mail/answer/7190.
-    - descriptive flags like "has" and "is" can take list values
-    - other list values would be taken to mean OR
-    :return: string representation of search q
+    Generate query for searching messages. [https://support.google.com/mail/answer/7190]
+
+    :keyword kwargs: Key-Value pairs. Descriptive flags like *has* or *is* can take lists. Otherwise, list values would be interpreted as "OR".
+    :return: String representation of search q
     """
 
     parsed_q = []
@@ -135,3 +135,42 @@ def create_message(sender, to, subject, message_text, attachment_paths=None):
             message.attach(msg)
 
     return {'raw': base64.urlsafe_b64encode(message.as_string())}
+
+
+def list_to_html(data, has_header=True, table_format=None):
+    """
+    Convenience function to convert tables to html for attaching as message text.
+
+    :param data: Table data
+    :type data: list of lists
+    :param has_header: Flag whether data contains a header in the first row.
+    :type has_header: boolean
+    :param table_format: Dictionary representation of formatting for table elements. Eg. {'table': "border: 2px solid black;"}
+    :type table_format: dictionary
+    :return: String representation of HTML.
+    """
+
+    from tabulate import tabulate
+
+    if has_header:
+        header = data.pop(0)
+    else:
+        header = ()
+
+    table_html = tabulate(data, headers=header, tablefmt='html', numalign='left')
+
+    if table_format is not None:
+        if isinstance(table_format, str) and table_format.lower() == 'default':
+            table_format = {
+                'table': "width: 100%; border-collapse: collapse; border: 2px solid black;",
+                'th': "border: 2px solid black;",
+                'td': "border: 1px solid black;"
+            }
+
+        if isinstance(table_format, dict):
+            assert all([key in ('table', 'th', 'tr', 'td') for key in table_format.keys()])
+
+            for k, v in table_format.iteritems():
+                table_html = table_html.replace('<%s>' % k, '<%s style="%s">' % (k, v))
+
+    return table_html
