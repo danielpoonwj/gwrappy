@@ -5,3 +5,4 @@ pandas>=0.18.0
 unicodecsv>=0.14.1
 pytz
 tzlocal
+tabulate

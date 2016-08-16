@@ -14,12 +14,13 @@ requirements = [
     'pandas>=0.18.0',
     'unicodecsv>=0.14.1',
     'pytz',
-    'tzlocal'
+    'tzlocal',
+    'tabulate'
 ]
 
 setup(
     name='gwrappy',
-    version='0.1.0',
+    version='0.1.1',
     description="User friendly wrapper for Google APIs",
     long_description=readme + '\n\n' + history,
     author="Daniel Poon",
