@@ -7,6 +7,9 @@ This package is designed to take the pain out of using Google's powerful APIs. F
 Each API is accessible through a specific Utility found within each subpackage.
 These Utilities are objects that initiate and authenticate the service objects required to access the each API's functionality.
 
+Authentication
+--------------
+
 It is **highly** recommended to download the wonderful gcloud SDK [https://cloud.google.com/sdk/] as a complementary tool.
 For one, it allows you to simplify access to Google Cloud Platform services using Application Default Credentials.
 Otherwise, credentials would have to be authenticated and a credentials file would have to be stored etc etc.
@@ -14,7 +17,6 @@ Otherwise, credentials would have to be authenticated and a credentials file wou
 If the gcloud SDK has been installed and configured to the desired user and project, authentication is seamless.
 
 .. code-block:: python
-    :linenos:
 
     from gwrappy.bigquery import BigqueryUtility
     bq_obj = BigqueryUtility()
@@ -24,7 +26,6 @@ Also, if multiple user credentials are required, this solution may actually be m
 Authentication flow with client_secret.json is only required once per service, thereafter the credentials are stored as a value in credentials.json, with the key being the client_id.
 
 .. code-block:: python
-    :linenos:
 
     from gwrappy.bigquery import BigqueryUtility
     secret_path = path/to/client_secret.json
@@ -37,4 +38,16 @@ Authentication flow with client_secret.json is only required once per service, t
         client_id=client_id
     )
 
+Class Methods
+-------------
 
+Once the Utility object has been initialized, accessing methods within the object are generally wrapped APi calls.
+For more information on accepted kwargs, please visit the respective method's documentation.
+
+Working with Response Objects
+-----------------------------
+
+Some methods return Response objects eg. gwrappy.bigquery.utils.JobResponse.
+These objects are generally parsing the JSON responses from the API, calculating statistics like time taken and size (if applicable) and converting it to a human-readable format.
+
+Should the original API response be required for custom logging or other reasons, access the **resp** variable within the Response object.
