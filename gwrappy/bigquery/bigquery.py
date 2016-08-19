@@ -51,13 +51,13 @@ class BigqueryUtility:
         :param project_id: Unique project identifier.
         :type project_id: string
         :param state_filter: Pre-filter API request for job state. Acceptable values are "done", "pending" and "running". [Equivalent API param: stateFilter]
-        :type state_filter: boolean
+        :type state_filter: string
         :param show_all: Whether to display jobs owned by all users in the project. [Equivalent API param: allUsers]
         :type show_all: boolean
         :param max_results: If None, all results are iterated over and returned.
         :type max_results: integer
         :param filter_exp: Function that filters entries if filter_exp evaluates to True.
-        :type filter_exp: integer
+        :type filter_exp: function
         :return: List of dictionary objects representing job resources.
         """
 
@@ -584,7 +584,7 @@ class BigqueryUtility:
                     },
                     'writeDisposition': kwargs.get('writeDisposition', 'WRITE_TRUNCATE'),
                     'sourceFormat': kwargs.get('sourceFormat', None),
-                    'skipLeadingRows': kwargs.get('skipLeadingRows', 1) if kwargs.get('sourceFormat', None) in (None, 'CSV') else kwargs.get('skipLeadingRows', 0),
+                    'skipLeadingRows': kwargs.get('skipLeadingRows', 1) if kwargs.get('sourceFormat', None) in (None, 'CSV') else None,
                     'fieldDelimiter': kwargs.get('fieldDelimiter', None),
                     'schema': {
                         'fields': schema
@@ -750,7 +750,6 @@ class BigqueryUtility:
         :return: JobResponse object
         """
 
-
         from googleapiclient.http import MediaInMemoryUpload
 
         request_body = {
@@ -767,7 +766,7 @@ class BigqueryUtility:
                     },
                     'writeDisposition': kwargs.get('writeDisposition', 'WRITE_TRUNCATE'),
                     'sourceFormat': kwargs.get('sourceFormat', None),
-                    'skipLeadingRows': kwargs.get('skipLeadingRows', 1) if kwargs.get('sourceFormat', None) in (None, 'CSV') else kwargs.get('skipLeadingRows', 0),
+                    'skipLeadingRows': kwargs.get('skipLeadingRows', 1) if kwargs.get('sourceFormat', None) in (None, 'CSV') else None,
                     'fieldDelimiter': kwargs.get('fieldDelimiter', None),
                     'schema': {
                         'fields': schema
@@ -831,7 +830,7 @@ class BigqueryUtility:
                 'compression': kwargs.get('sourceFormat', None),
 
                 'csvOptions': {
-                    'skipLeadingRows': kwargs.get('skipLeadingRows', 1) if kwargs.get('sourceFormat', None) in (None, 'CSV') else kwargs.get('skipLeadingRows', 0),
+                    'skipLeadingRows': kwargs.get('skipLeadingRows', 1) if kwargs.get('sourceFormat', None) in (None, 'CSV') else None,
                     'fieldDelimiter': kwargs.get('fieldDelimiter', None),
                     'allowQuotedNewlines': kwargs.get('allowQuotedNewlines', None)
                 }
