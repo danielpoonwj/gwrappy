@@ -2,6 +2,11 @@
 History
 =======
 
+0.1.2 (2016-08-19)
+------------------
+* Bug Fixes
+* Documentation updates
+
 0.1.1 (2016-08-16)
 ------------------
 * Completed docstrings and amendments to documentation
