@@ -2,6 +2,13 @@
 History
 =======
 
+0.1.3 (2016-08-23)
+------------------
+* BigQuery:
+    * JobResponse now only sets time_taken if data is available.
+        * Fixed bug that raised KeyError when wait_finish=False, since endTime was unavailable in the API response.
+    * poll_resp_list returns JobReponse objects. Also propagates 'description' attribute if available.
+
 0.1.2 (2016-08-19)
 ------------------
 * Bug Fixes
