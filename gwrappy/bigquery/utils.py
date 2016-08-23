@@ -24,20 +24,27 @@ class JobResponse:
 
         self.id = self.resp['id']
 
-        self.time_taken = dict(zip(
-            ('m', 's'),
-            divmod(
-                (
-                    datetime.utcfromtimestamp(float(self.resp['statistics']['endTime']) / 1000) -
-                    datetime.utcfromtimestamp(float(self.resp['statistics']['creationTime']) / 1000)
-                ).seconds,
-            60)
-        ))
-
         self.job_type = resp['configuration'].keys()[0]
         self._parse_job()
 
     def _parse_job(self):
+        try:
+            setattr(
+                self,
+                'time_taken',
+                dict(zip(
+                    ('m', 's'),
+                    divmod(
+                        (
+                            datetime.utcfromtimestamp(float(self.resp['statistics']['endTime']) / 1000) -
+                            datetime.utcfromtimestamp(float(self.resp['statistics']['creationTime']) / 1000)
+                        ).seconds,
+                        60)
+                ))
+            )
+        except KeyError:
+            pass
+
         if self.job_type == 'load':
             try:
                 setattr(self, 'size', humanize.naturalsize(int(self.resp['statistics']['load']['inputFileBytes'])))
@@ -61,13 +68,13 @@ class JobResponse:
                 pass
 
     def __repr__(self):
-        return '[BigQuery] %s%s Job (%s) %s%s(%s)' % (
+        return '[BigQuery] %s%s Job (%s) %s%s%s' % (
             '%s ' % self.description if hasattr(self, 'description') else '',
             self.job_type.capitalize(),
             self.id,
             '%s rows ' % getattr(self, 'row_count') if hasattr(self, 'row_count') else '',
             '%s processed ' % getattr(self, 'size') if hasattr(self, 'size') else '',
-            '{m} Minutes {s} Seconds'.format(**self.time_taken)
+            '({m} Minutes {s} Seconds)'.format(**getattr(self, 'time_taken')) if hasattr(self, 'row_count') else ''
         )
     
     __str__ = __repr__
