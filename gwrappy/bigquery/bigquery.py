@@ -945,9 +945,11 @@ class BigqueryUtility:
 
         for response in response_list:
             if isinstance(response, JobResponse):
-                return_list.append(self.poll_job_status(response.resp, sleep_time))
+                resp = self.poll_job_status(response.resp, sleep_time)
+                return_list.append(JobResponse(resp, getattr(response, 'description', None)))
             else:
                 assert isinstance(response, dict)
-                return_list.append(self.poll_job_status(response, sleep_time))
+                resp = self.poll_job_status(response, sleep_time)
+                return_list.append(JobResponse(resp))
 
         return return_list
