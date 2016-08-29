@@ -2,6 +2,11 @@
 History
 =======
 
+0.1.4 (2016-08-29)
+------------------
+* gwrappy.errors no longer imports service specific error objects. To access JobError, import it from gwrappy.bigquery.errors
+* simple date range generator function added to gwrappy.utils
+
 0.1.3 (2016-08-23)
 ------------------
 * BigQuery:
