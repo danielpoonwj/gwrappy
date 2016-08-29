@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import timezone
 from tzlocal import get_localzone
 
@@ -88,3 +88,22 @@ def datetime_to_timestamp(input_datetime, date_format='%Y-%m-%d', tz=None):
     return_value = long((input_value - epoch).total_seconds())
 
     return return_value
+
+
+def date_range(start, end, ascending=True):
+    if isinstance(start, datetime):
+        start_date = start.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    else:
+        start_date = datetime.strptime(start, '%Y-%m-%d')
+
+    if isinstance(end, datetime):
+        end_date = end.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    else:
+        end_date = datetime.strptime(end, '%Y-%m-%d')
+
+    assert end_date >= start_date
+
+    days_apart = (end_date - start_date).days + 1
+
+    for i in (range(0, days_apart) if ascending else range(0, days_apart)[::-1]):
+        yield start_date + timedelta(i)
