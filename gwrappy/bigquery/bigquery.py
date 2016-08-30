@@ -1,7 +1,7 @@
 from time import sleep
 
 from gwrappy.service import get_service
-from gwrappy.utils import iterate_list
+from gwrappy.utils import iterate_list, datetime_to_timestamp
 from gwrappy.errors import HttpError
 from gwrappy.bigquery.errors import JobError
 from gwrappy.bigquery.utils import JobResponse, TableResponse
@@ -45,9 +45,11 @@ class BigqueryUtility:
             filter_exp
          )
 
-    def list_jobs(self, project_id, state_filter=None, show_all=False, max_results=None, filter_exp=None):
+    def list_jobs(self, project_id, state_filter=None, show_all=False, projection='full', max_results=None, earliest_date=None, filter_exp=None):
         """
         Abstraction of jobs().list() method with inbuilt iteration functionality. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/list]
+
+        **Note** - All jobs are stored in BigQuery. Do set *max_results* or *earliest_date* to limit data returned.
 
         :param project_id: Unique project identifier.
         :type project_id: string
@@ -57,10 +59,21 @@ class BigqueryUtility:
         :type show_all: boolean
         :param max_results: If None, all results are iterated over and returned.
         :type max_results: integer
+        :param projection: Acceptable values are *'full'*, *'minimal'*. *'full'* includes job configuration.
+        :type projection: string
+        :param earliest_date: Only returns data after this date.
+        :type earliest_date: datetime object or string representation of datetime in %Y-%m-%d format.
         :param filter_exp: Function that filters entries if filter_exp evaluates to True.
         :type filter_exp: function
         :return: List of dictionary objects representing job resources.
         """
+
+        if earliest_date is not None:
+            # bigquery timestamp is in milliseconds
+            earliest_date_timestamp = datetime_to_timestamp(earliest_date) * 1000
+            break_condition = lambda x: int(x['statistics']['creationTime']) < earliest_date_timestamp
+        else:
+            break_condition = None
 
         return iterate_list(
             self._service.jobs(),
@@ -68,8 +81,11 @@ class BigqueryUtility:
             max_results,
             self._max_retries,
             filter_exp,
+            break_condition=break_condition,
+
             projectId=project_id,
             allUsers=show_all,
+            projection=projection,
             stateFilter=state_filter
          )
 
