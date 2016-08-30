@@ -2,6 +2,13 @@
 History
 =======
 
+0.1.5 (2016-08-30)
+------------------
+* list methods now return a generator for memory efficiency
+* BigQuery:
+    * list_jobs takes 2 new args *projection* and *earliest_date*
+* Documentation updates
+
 0.1.4 (2016-08-29)
 ------------------
 * gwrappy.errors no longer imports service specific error objects. To access JobError, import it from gwrappy.bigquery.errors
