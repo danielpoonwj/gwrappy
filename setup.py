@@ -15,12 +15,13 @@ requirements = [
     'unicodecsv>=0.14.1',
     'pytz',
     'tzlocal',
-    'tabulate'
+    'tabulate',
+    'python-dateutil'
 ]
 
 setup(
     name='gwrappy',
-    version='0.1.5',
+    version='0.1.6',
     description="User friendly wrapper for Google APIs",
     long_description=readme + '\n\n' + history,
     author="Daniel Poon",

@@ -2,6 +2,14 @@
 History
 =======
 
+0.1.6 (2016-09-08)
+------------------
+* Added more utilities
+    * utils.month_range: Chunk dates into months.
+    * utils.simple_mail: Send basic emails for alerts or testing. *Note*: For greater security and flexibility, do still use the gmail functionality within this package.
+    * utils.StringLogger: Simply wrapper for logging with a string handler and convenience functions for retrieving logs as a string.
+* Added dateutil as a dependency
+
 0.1.5 (2016-08-30)
 ------------------
 * list methods now return a generator for memory efficiency
