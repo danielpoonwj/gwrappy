@@ -6,3 +6,4 @@ unicodecsv>=0.14.1
 pytz
 tzlocal
 tabulate
+python-dateutil
