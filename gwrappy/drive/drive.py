@@ -55,25 +55,23 @@ class DriveUtility:
 
         :param max_results: If None, all results are iterated over and returned.
         :type max_results: integer
-        :keyword fields: Available properties can be found here: https://developers.google.com/drive/v3/reference/about
+        :keyword orderBy: List of keys to sort by. Refer to documentation.
         :keyword spaces: A comma-separated list of spaces to query within the corpus. Supported values are 'drive', 'appDataFolder' and 'photos'.
         :keyword q: A query for filtering the file results. Reference here: https://developers.google.com/drive/v3/web/search-parameters
         :return: List of dictionary objects representing file resources.
         """
 
-        fields = kwargs.get('fields', None)
-        if isinstance(fields, list):
-            if 'nextPageToken' not in fields:
-                fields.append('nextPageToken')
-            fields = ', '.join(fields)
+        order_by = kwargs.get('orderBy', None)
+        if isinstance(order_by, list):
+            order_by = ','.join(order_by)
 
         return iterate_list(
             self._service.files(),
             'files',
             max_results,
             self._max_retries,
-            filter_exp=None,
-            fields=fields,
+            filter_exp=kwargs.get('filter_exp', None),
+            orderBy=order_by,
             q=kwargs.get('q', None),
             spaces=kwargs.get('spaces', None)
         )
