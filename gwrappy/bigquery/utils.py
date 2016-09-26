@@ -74,7 +74,7 @@ class JobResponse:
             self.id,
             '%s rows ' % getattr(self, 'row_count') if hasattr(self, 'row_count') else '',
             '%s processed ' % getattr(self, 'size') if hasattr(self, 'size') else '',
-            '({m} Minutes {s} Seconds)'.format(**getattr(self, 'time_taken')) if hasattr(self, 'row_count') else ''
+            '({m} Minutes {s} Seconds)'.format(**getattr(self, 'time_taken')) if hasattr(self, 'time_taken') else ''
         )
     
     __str__ = __repr__
