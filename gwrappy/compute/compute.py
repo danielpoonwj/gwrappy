@@ -149,72 +149,135 @@ class ComputeEngineUtility:
                 filter=filter_str
             )
 
-    def list_operations(self, region_id=None, max_results=None, filter_str=None):
+    def list_operations(self, operation_type, location_id=None, max_results=None, filter_str=None):
         """
-        Abstraction of regionOperations().list() method with inbuilt iteration functionality. [https://cloud.google.com/compute/docs/reference/latest/regionOperations/list]
+        Choose between region or zone operations with operation_type.
 
-        :param region_id: Region name. If None, all Regions are iterated over and returned.
+        Abstraction of zoneOperations()/regionOperations().list() method with inbuilt iteration functionality.
+
+        https://cloud.google.com/compute/docs/reference/latest/zoneOperations/list
+
+        https://cloud.google.com/compute/docs/reference/latest/regionOperations/list
+
+        :param operation_type: 'zone' or 'region' type operations.
+        :param location_id: Zone/Region name. If None, all Zones/Regions are iterated over and returned.
         :param max_results: If None, all results are iterated over and returned.
         :type max_results: integer
         :param filter_str: Check documentation link for more details.
         :return: Generator for dictionary objects representing resources.
         """
 
-        if region_id is None:
-            return_list = [
-                iterate_list(
+        assert operation_type in ('region', 'zone')
+
+        if location_id is None:
+            if operation_type == 'region':
+                return_list = [
+                    iterate_list(
+                        self._service.regionOperations(),
+                        'items',
+                        max_results,
+                        self._max_retries,
+                        project=self.project_id,
+                        region=region['name'],
+                        filter=filter_str
+                    )
+                    for region in self.list_regions()
+                ]
+
+            else:
+                return_list = [
+                    iterate_list(
+                        self._service.zoneOperations(),
+                        'items',
+                        max_results,
+                        self._max_retries,
+                        project=self.project_id,
+                        zone=zone['name'],
+                        filter=filter_str
+                    )
+                    for zone in self.list_zones()
+                ]
+            return chain(*return_list)
+
+        else:
+            if operation_type == 'region':
+                return iterate_list(
                     self._service.regionOperations(),
                     'items',
                     max_results,
                     self._max_retries,
                     project=self.project_id,
-                    region=region['name'],
+                    region=location_id,
                     filter=filter_str
                 )
-                for region in self.list_regions()
-            ]
-            return chain(*return_list)
+
+            else:
+                return iterate_list(
+                    self._service.zoneOperations(),
+                    'items',
+                    max_results,
+                    self._max_retries,
+                    project=self.project_id,
+                    zone=location_id,
+                    filter=filter_str
+                )
+
+    def get_operation(self, operation_type, location_id, operation_name):
+        """
+        Choose between region or zone operations with operation_type.
+
+        Abstraction of zoneOperations()/regionOperations().get() method.
+
+        https://cloud.google.com/compute/docs/reference/latest/zoneOperations/get
+
+        https://cloud.google.com/compute/docs/reference/latest/regionOperations/get
+
+        :param operation_type: 'zone' or 'region' type operations.
+        :param location_id: Zone/Region name.
+        :param operation_name: Operation name.
+        :return: ZoneOperations/RegionOperations Resource.
+        """
+
+        assert operation_type in ('region', 'zone')
+
+        if operation_type == 'region':
+            return self._service.regionOperations().get(
+                project=self.project_id,
+                region=location_id,
+                operation=operation_name
+            ).execute(num_retries=self._max_retries)
 
         else:
-            return iterate_list(
-                self._service.regionOperations(),
-                'items',
-                max_results,
-                self._max_retries,
+            return self._service.zoneOperations().get(
                 project=self.project_id,
-                region=region_id,
-                filter=filter_str
-            )
+                zone=location_id,
+                operation=operation_name
+            ).execute(num_retries=self._max_retries)
 
-    def get_operation(self, region_id, operation_name, poll=False, sleep_time=0.5):
+    def poll_operation_status(self, operation_type, location_id, operation_name, end_state, sleep_time=0.5):
         """
-        Abstraction of regionOperations().get() method. [https://cloud.google.com/compute/docs/reference/latest/regionOperations/get]
+        Poll operation to until desired end_state is achieved. eg. 'DONE' when adding addresses.
 
-        :param region_id: Region name.
+        :param operation_type: 'zone' or 'region' type operations.
+        :param location_id: Zone/Region name.
         :param operation_name: Operation name.
-        :param poll: If True, would poll Operation until status == 'DONE'.
-        :param sleep_time: Only used if poll is True. Time interval between polls.
+        :param end_state: Final status that signifies operation is finished.
+        :param sleep_time: Intervals between polls.
         :return: RegionOperations Resource.
         """
 
-        resp = self._service.regionOperations().get(
-            project=self.project_id,
-            region=region_id,
-            operation=operation_name
-        ).execute(num_retries=self._max_retries)
+        status = None
+        resp = None
 
-        if poll:
-            status = None
+        while status != end_state:
+            resp = self.get_operation(
+                operation_type=operation_type,
+                location_id=location_id,
+                operation_name=operation_name
+            )
 
-            while status != 'DONE':
-                resp = self._service.regionOperations().get(
-                    project=self.project_id,
-                    region=region_id,
-                    operation=operation_name
-                ).execute(num_retries=self._max_retries)
-
-                status = resp['status']
-                sleep(sleep_time)
+            status = resp['status']
+            sleep(sleep_time)
 
         return resp
 
@@ -248,10 +311,11 @@ class ComputeEngineUtility:
             body={'name': address_name}
         ).execute(num_retries=self._max_retries)
 
-        return self.get_operation(
-            region_id=region_id,
+        return self.poll_operation_status(
+            operation_type='region',
+            location_id=region_id,
             operation_name=resp['name'],
-            poll=True
+            end_state='DONE'
         )
 
     def delete_address(self, region_id, address_name):
@@ -269,8 +333,68 @@ class ComputeEngineUtility:
             address=address_name
         ).execute(num_retries=self._max_retries)
 
-        return self.get_operation(
-            region_id=region_id,
+        return self.poll_operation_status(
+            operation_type='region',
+            location_id=region_id,
             operation_name=resp['name'],
-            poll=True
+            end_state='DONE'
+        )
+
+    def get_instance(self, zone_id, instance_name):
+        """
+        Abstraction of instances().get() method. [https://cloud.google.com/compute/docs/reference/latest/instances/get]
+
+        :param zone_id: Zone name.
+        :param instance_name: Instance name.
+        :return: Instances Resource.
+        """
+
+        return self._service.instances().get(
+            project=self.project_id,
+            zone=zone_id,
+            instance=instance_name
+        ).execute(num_retries=self._max_retries)
+
+    def start_instance(self, zone_id, instance_name):
+        """
+        Abstraction of instances().start() method with operation polling functionality. [https://cloud.google.com/compute/docs/reference/latest/instances/start]
+
+        :param zone_id: Zone name.
+        :param instance_name: Instance name.
+        :return: ZoneOperations Resource.
+        """
+
+        resp = self._service.instances().start(
+            project=self.project_id,
+            zone=zone_id,
+            instance=instance_name
+        ).execute(num_retries=self._max_retries)
+
+        return self.poll_operation_status(
+            operation_type='zone',
+            location_id=zone_id,
+            operation_name=resp['name'],
+            end_state='DONE'
+        )
+
+    def stop_instance(self, zone_id, instance_name):
+        """
+        Abstraction of instances().stop() method with operation polling functionality. [https://cloud.google.com/compute/docs/reference/latest/instances/stop]
+
+        :param zone_id: Zone name.
+        :param instance_name: Instance name.
+        :return: ZoneOperations Resource.
+        """
+
+        resp = self._service.instances().stop(
+            project=self.project_id,
+            zone=zone_id,
+            instance=instance_name
+        ).execute(num_retries=self._max_retries)
+
+        return self.poll_operation_status(
+            operation_type='zone',
+            location_id=zone_id,
+            operation_name=resp['name'],
+            end_state='DONE'
         )
