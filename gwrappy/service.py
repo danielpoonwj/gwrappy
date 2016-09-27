@@ -1,23 +1,5 @@
 from googleapiclient.discovery import build
-
-SCOPES = {
-    'bigquery': {
-        'scope': 'https://www.googleapis.com/auth/bigquery',
-        'version': 'v2'
-    },
-    'storage': {
-        'scope': 'https://www.googleapis.com/auth/cloud-platform',
-        'version': 'v1'
-    },
-    'drive': {
-        'scope': 'https://www.googleapis.com/auth/drive',
-        'version': 'v3'
-    },
-    'gmail': {
-        'scope': 'https://mail.google.com/',
-        'version': 'v1'
-    }
-}
+from scopes import SCOPES
 
 
 def get_service(service_name, **kwargs):
