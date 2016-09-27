@@ -263,7 +263,7 @@ class ComputeEngineUtility:
         :param operation_name: Operation name.
         :param end_state: Final status that signifies operation is finished.
         :param sleep_time: Intervals between polls.
-        :return: RegionOperations Resource.
+        :return: ZoneOperations/RegionOperations Resource.
         """
 
         status = None
