@@ -21,7 +21,7 @@ requirements = [
 
 setup(
     name='gwrappy',
-    version='0.1.6',
+    version='0.2.0',
     description="User friendly wrapper for Google APIs",
     long_description=readme + '\n\n' + history,
     author="Daniel Poon",

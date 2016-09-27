@@ -2,6 +2,13 @@
 History
 =======
 
+0.2.0 (2016-09-27)
+------------------
+* Added gwrappy.compute for Google Compute Engine.
+* Minor Bugfixes:
+    * drive.DriveUtility.list_files(): Removed fields, added orderBy and filter_exp.
+    * bigquery.utils.JobResponse: time_taken in __repr__ for some job types fixed.
+
 0.1.6 (2016-09-08)
 ------------------
 * Added more utilities

@@ -27,4 +27,5 @@ Documentation
     modules/storage
     modules/drive
     modules/gmail
+    modules/compute
     modules/utils

@@ -22,6 +22,7 @@ Features
     * Cloud Storage
     * Drive
     * Gmail
+    * Compute Engine
 
 .. code-block:: python
 
