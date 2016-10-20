@@ -2,6 +2,12 @@
 History
 =======
 
+0.2.1 (2016-10-20)
+------------------
+* Minor Bugfixes:
+    * bigquery.utils.read_sql properly checks kwargs.
+    * BigqueryUtility queries with return_type='dataframe' uses inferred dtypes for integer columns to stop pandas from breaking if column contains NaN.
+
 0.2.0 (2016-09-27)
 ------------------
 * Added gwrappy.compute for Google Compute Engine.
