@@ -133,7 +133,7 @@ def read_sql(read_path, **kwargs):
     with open(read_path, 'rb') as read_file:
         read_string = read_file.read()
 
-        if kwargs is not None:
+        if len(kwargs) > 0:
             read_string = read_string.format(**kwargs)
 
     return read_string
