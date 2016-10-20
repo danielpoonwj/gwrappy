@@ -290,13 +290,13 @@ class BigqueryUtility:
             def _convert_dtypes(schema):
                 dtype_dict = {
                     'STRING': object,
-                    'INTEGER': long,
+                    # 'INTEGER': long,
                     'FLOAT': float,
                     'BOOLEAN': bool
                 }
 
                 return {
-                    x['name']: dtype_dict[x['type']] for x in schema if x['type'] != 'TIMESTAMP'
+                    x['name']: dtype_dict.get(x['type'], None) for x in schema if x['type'] != 'TIMESTAMP'
                 }
 
             with BytesIO() as file_buffer:
