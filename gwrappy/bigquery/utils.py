@@ -1,4 +1,6 @@
+import sys
 import os
+import io
 from datetime import datetime
 import humanize
 
@@ -24,7 +26,7 @@ class JobResponse:
 
         self.id = self.resp['id']
 
-        self.job_type = resp['configuration'].keys()[0]
+        self.job_type = list(resp['configuration'].keys())[0]
         self._parse_job()
 
     def _parse_job(self):
@@ -130,7 +132,7 @@ def read_sql(read_path, **kwargs):
 
     assert os.path.exists(read_path)
 
-    with open(read_path, 'rb') as read_file:
+    with io.open(read_path, 'r', encoding='utf-8') as read_file:
         read_string = read_file.read()
 
         if len(kwargs) > 0:
@@ -179,13 +181,19 @@ def file_to_string(f, source_format='csv'):
 
     assert source_format.lower() in ('csv', 'json')
 
-    from io import BytesIO
-
-    output_buffer = BytesIO()
+    # python 2/3 compatibility
+    if sys.version_info.major < 3:
+        output_buffer = io.BytesIO()
+    else:
+        output_buffer = io.StringIO()
 
     if source_format == 'csv':
         import pandas as pd
-        import unicodecsv as csv
+
+        if sys.version_info.major < 3:
+            import unicodecsv as csv
+        else:
+            import csv
 
         string_writer = csv.writer(output_buffer, lineterminator='\n')
 
@@ -193,15 +201,15 @@ def file_to_string(f, source_format='csv'):
         if isinstance(f, str):
             assert os.path.exists(f)
 
-            with open(f, 'rb') as read_file:
+            with io.open(f, 'rb') if sys.version_info.major < 3 else io.open(f, 'r', encoding='utf-8') as read_file:
                 string_writer.writerows(csv.reader(read_file))
+
+        elif isinstance(f, pd.DataFrame):
+            f.to_csv(output_buffer, index=False, encoding='utf-8', date_format='%Y-%m-%d %H:%M:%S')
 
         # also accepts list of lists
         elif isinstance(f, list) and all(isinstance(x, list) for x in f):
             string_writer.writerows(f)
-
-        elif isinstance(f, pd.DataFrame):
-            f.to_csv(output_buffer, index=False, encoding='utf-8', date_format='%Y-%m-%d %H:%M:%S')
 
         else:
             raise TypeError('Unrecognized type: %s' % type(f))
@@ -212,7 +220,7 @@ def file_to_string(f, source_format='csv'):
         # can be loaded from file path or string in a json structure
         if isinstance(f, str):
             if os.path.exists(f):
-                with open(f, 'rb') as read_file:
+                with io.open(f, 'r', encoding='utf-8') as read_file:
                     json_obj = json.load(read_file)
             else:
                 json_obj = json.loads(f)
