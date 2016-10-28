@@ -4,7 +4,12 @@ from pytz import timezone
 from tzlocal import get_localzone
 
 import logging
-from StringIO import StringIO
+
+# python 2/3 compatibility
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 
 def iterate_list(service, object_name, max_results=None, max_retries=3, filter_exp=None, break_condition=None, **kwargs):
@@ -171,9 +176,9 @@ def month_range(start, end, full_months=False, month_format='%Y-%m', ascending=T
         date_dict[month_key].append(temp_date)
 
     if full_months:
-        return {k: sorted(v, reverse=not ascending) for k, v in date_dict.iteritems() if is_last_day(max(v))}
+        return {k: sorted(v, reverse=not ascending) for k, v in date_dict.items() if is_last_day(max(v))}
     else:
-        return {k: sorted(v, reverse=not ascending) for k, v in date_dict.iteritems()}
+        return {k: sorted(v, reverse=not ascending) for k, v in date_dict.items()}
 
 
 def simple_mail(send_to, subject, text, send_from=None, username=None, password=None, server='smtp.gmail.com', port=587):
