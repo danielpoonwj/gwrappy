@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 from googleapiclient.discovery import build
-from scopes import SCOPES
+from .scopes import SCOPES
 
 
 def get_service(service_name, **kwargs):
