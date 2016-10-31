@@ -2,6 +2,14 @@
 History
 =======
 
+0.3.0 (2016-10-31)
+------------------
+* Python 3 compatibility
+    * Most API functions were already compatible, most changes were done for the utilities functions.
+* Minor Bugfixes/Changes
+    * BigqueryUtility().poll_resp_list() now doesn't break once an exception is encountered. The respective Error object is returned and job checking is uninterrupted.
+    * Fixed int columns being interpreted as float for pandas 0.19.0 when querying to dataframe.
+
 0.2.1 (2016-10-20)
 ------------------
 * Minor Bugfixes:
