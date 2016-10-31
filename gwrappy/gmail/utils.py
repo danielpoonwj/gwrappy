@@ -20,7 +20,7 @@ def generate_q(**kwargs):
 
     parsed_q = []
 
-    for k, v in kwargs.iteritems():
+    for k, v in kwargs.items():
         if k in ('has', 'is'):
             if isinstance(v, list):
                 for element in v:
@@ -170,7 +170,7 @@ def list_to_html(data, has_header=True, table_format=None):
         if isinstance(table_format, dict):
             assert all([key in ('table', 'th', 'tr', 'td') for key in table_format.keys()])
 
-            for k, v in table_format.iteritems():
+            for k, v in table_format.items():
                 table_html = table_html.replace('<%s>' % k, '<%s style="%s">' % (k, v))
 
     return table_html

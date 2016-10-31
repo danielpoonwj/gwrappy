@@ -21,7 +21,7 @@ requirements = [
 
 setup(
     name='gwrappy',
-    version='0.2.1',
+    version='0.3.0',
     description="User friendly wrapper for Google APIs",
     long_description=readme + '\n\n' + history,
     author="Daniel Poon",
@@ -38,8 +38,10 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5'
     ]
 )

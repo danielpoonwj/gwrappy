@@ -276,6 +276,8 @@ class BigqueryUtility:
         # json will be first converted to dataframe for proper typing
         else:
             import pandas as pd
+            pd.set_option('display.expand_frame_repr', False)
+
             from io import BytesIO
             import unicodecsv as csv
 
@@ -295,8 +297,9 @@ class BigqueryUtility:
                     'BOOLEAN': bool
                 }
 
+                # pandas 0.19.0 would wrongly convert int columns to float if column: None in dtype dict
                 return {
-                    x['name']: dtype_dict.get(x['type'], None) for x in schema if x['type'] != 'TIMESTAMP'
+                    x['name']: dtype_dict[x['type']] for x in schema if x['type'] in dtype_dict.keys()
                 }
 
             with BytesIO() as file_buffer:
@@ -320,10 +323,10 @@ class BigqueryUtility:
             elif return_type == 'json':
                 results = results.to_dict('records')
                 # pandas will return NaN, convert to native python None
-                results = [{k: v if pd.notnull(v) else None for k, v in x.iteritems()} for x in results]
+                results = [{k: v if pd.notnull(v) else None for k, v in x.items()} for x in results]
                 return results, job_resp
 
-    def sync_query(self, project_id, query, return_type='list', sleep_time=1, dry_run=False):
+    def sync_query(self, project_id, query, return_type='list', sleep_time=1, dry_run=False, **kwargs):
         """
         Abstraction of jobs().query() method, iterating and parsing query results. [https://cloud.google.com/bigquery/docs/reference/v2/jobs/query]
 
@@ -337,6 +340,7 @@ class BigqueryUtility:
         :type sleep_time: integer
         :param dry_run: Basic statistics about the query, without actually running it. Mainly for testing or estimating amount of data processed.
         :type dry_run: boolean
+        :keyword useLegacySql: Toggle between Legacy and Standard SQL.
         :return: If not dry_run: result in specified type, JobResponse object. If dry_run: Dictionary object representing expected query statistics.
         :raises: JobError object if an error is discovered after job finishes running.
         """
@@ -344,7 +348,8 @@ class BigqueryUtility:
         request_body = {
             'query': query,
             'timeoutMs': 0,
-            'dryRun': dry_run
+            'dryRun': dry_run,
+            'useLegacySql': kwargs.get('useLegacySql', None)
         }
 
         job_resp = self._service.jobs().query(
@@ -386,6 +391,7 @@ class BigqueryUtility:
         :type return_type: string
         :param sleep_time: Time to pause (seconds) between polls.
         :type sleep_time: integer
+        :keyword useLegacySql: Toggle between Legacy and Standard SQL.
         :keyword writeDisposition: (Optional) Config kwarg that determines table writing behaviour.
         :return: result in specified type, JobResponse object.
         :raises: JobError object if an error is discovered after job finishes running.
@@ -408,7 +414,8 @@ class BigqueryUtility:
                         'tableId': dest_table_id,
                     },
                     'writeDisposition': kwargs.get('writeDisposition', 'WRITE_TRUNCATE'),
-                    'flattenResults': kwargs.get('flattenResults', None)
+                    'flattenResults': kwargs.get('flattenResults', None),
+                    'useLegacySql': kwargs.get('useLegacySql', None)
                 }
             }
         }
@@ -442,6 +449,7 @@ class BigqueryUtility:
         :type wait_finish: boolean
         :param sleep_time: Time to pause (seconds) between polls.
         :type sleep_time: integer
+        :keyword useLegacySql: Toggle between Legacy and Standard SQL.
         :keyword writeDisposition: (Optional) Config kwarg that determines table writing behaviour.
         :return: If wait_finish: result in specified type, JobResponse object. If not wait_finish: JobResponse object.
         :raises: If wait_finish: JobError object if an error is discovered after job finishes running.
@@ -464,7 +472,8 @@ class BigqueryUtility:
                         'tableId': dest_table_id,
                     },
                     'writeDisposition': kwargs.get('writeDisposition', 'WRITE_TRUNCATE'),
-                    'flattenResults': kwargs.get('flattenResults', None)
+                    'flattenResults': kwargs.get('flattenResults', None),
+                    'useLegacySql': kwargs.get('useLegacySql', None)
                 }
             }
         }
@@ -502,7 +511,7 @@ class BigqueryUtility:
 
         return JobResponse(job_resp, 'write table')
 
-    def write_view(self, query, dest_project_id, dest_dataset_id, dest_table_id, udf=None, overwrite_existing=True):
+    def write_view(self, query, dest_project_id, dest_dataset_id, dest_table_id, udf=None, overwrite_existing=True, **kwargs):
         """
         Views are analogous to a virtual table, functioning as a table but only returning results from the underlying query when called.
 
@@ -517,6 +526,7 @@ class BigqueryUtility:
         :param udf: One or more UDF functions if required by the query.
         :type udf: string or list
         :param overwrite_existing: Safety flag, would raise HttpError if table exists and overwrite_existing=False
+        :keyword useLegacySql: Toggle between Legacy and Standard SQL.
         :return: TableResponse object for the newly inserted table
         """
 
@@ -528,7 +538,8 @@ class BigqueryUtility:
             },
             'view': {
                 'userDefinedFunctionResources': udf,
-                'query': query
+                'query': query,
+                'useLegacySql': kwargs.get('useLegacySql', None)
             }
         }
 
@@ -946,13 +957,15 @@ class BigqueryUtility:
 
     def poll_resp_list(self, response_list, sleep_time=1):
         """
-        Convenience function for iterating and polling list of responses collected with jobs wait_finish=False
+        Convenience function for iterating and polling list of responses collected with jobs wait_finish=False.
+
+        If any job fails, its respective Error object is returned to ensure errors would not break polling subsequent responses.
 
         :param response_list: List of response objects
         :type response_list: list of dicts or JobResponse objects
         :param sleep_time: Time to pause (seconds) between polls.
         :type sleep_time: integer
-        :return: List of dictionary objects representing job resource's final state.
+        :return: List of JobResponse or Error (JobError/HttpError) objects representing job resource's final state.
         """
         # to use when setting wait_finish = False to insert jobs without waiting
         # store initial responses in list and use this method to iterate and poll responses
@@ -961,12 +974,15 @@ class BigqueryUtility:
         return_list = []
 
         for response in response_list:
-            if isinstance(response, JobResponse):
-                resp = self.poll_job_status(response.resp, sleep_time)
-                return_list.append(JobResponse(resp, getattr(response, 'description', None)))
-            else:
-                assert isinstance(response, dict)
-                resp = self.poll_job_status(response, sleep_time)
-                return_list.append(JobResponse(resp))
+            try:
+                if isinstance(response, JobResponse):
+                    resp = self.poll_job_status(response.resp, sleep_time)
+                    return_list.append(JobResponse(resp, getattr(response, 'description', None)))
+                else:
+                    assert isinstance(response, dict)
+                    resp = self.poll_job_status(response, sleep_time)
+                    return_list.append(JobResponse(resp))
+            except (JobError, HttpError) as e:
+                return_list.append(e)
 
         return return_list

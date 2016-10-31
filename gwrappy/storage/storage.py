@@ -1,6 +1,12 @@
 from time import sleep
 import random
-from urllib2 import quote
+
+# python 2/3 compatibility
+try:
+    from urllib2 import quote
+except ImportError:
+    from urllib.request import quote
+
 from httplib2 import HttpLib2Error
 
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
@@ -129,12 +135,12 @@ class GcsUtility:
 
     def _handle_progressless_iter(self, error, progressless_iters):
         if progressless_iters > self._max_retries:
-            print 'Failed to make progress for too many consecutive iterations.'
+            print('Failed to make progress for too many consecutive iterations.')
             raise error
 
         sleep_time = random.random() * (2 ** progressless_iters)
-        print ('Caught exception (%s). Sleeping for %s seconds before retry #%d.'
-               % (str(error), sleep_time, progressless_iters))
+        print('Caught exception (%s). Sleeping for %s seconds before retry #%d.' %
+              (str(error), sleep_time, progressless_iters))
         sleep(sleep_time)
 
     def download_object(self, bucket_name, object_name, write_path):
