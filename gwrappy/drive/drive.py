@@ -1,4 +1,5 @@
 import os
+import io
 
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from gwrappy.service import get_service
@@ -136,9 +137,7 @@ class DriveUtility:
                 if output_type is not None:
                     assert output_type in ('dataframe', 'list')
 
-                    from io import BytesIO
-
-                    with BytesIO(content) as file_buffer:
+                    with io.BytesIO(content) as file_buffer:
                         if output_type == 'list':
                             import unicodecsv as csv
 
@@ -147,11 +146,12 @@ class DriveUtility:
 
                         elif output_type == 'dataframe':
                             import pandas as pd
+                            pd.set_option('display.expand_frame_repr', False)
 
                             drive_resp.load_resp(file_metadata, True)
                             return pd.read_csv(file_buffer), drive_resp
                 else:
-                    with open(write_path, 'wb') as write_file:
+                    with io.open(write_path, 'wb') as write_file:
                         write_file.write(content)
             else:
                 raise HttpError(resp, content)
@@ -159,7 +159,7 @@ class DriveUtility:
         else:
             req = self._service.files().get_media(fileId=file_id)
 
-            with open(write_path, 'wb') as write_file:
+            with io.open(write_path, 'wb') as write_file:
                 downloader = MediaIoBaseDownload(write_file, req)
 
                 done = False
