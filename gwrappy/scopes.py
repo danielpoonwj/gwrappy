@@ -18,5 +18,9 @@ SCOPES = {
     'compute': {
         'scope': 'https://www.googleapis.com/auth/compute',
         'version': 'v1'
+    },
+    'dataproc': {
+        'scope': 'https://www.googleapis.com/auth/cloud-platform',
+        'version': 'v1'
     }
 }
