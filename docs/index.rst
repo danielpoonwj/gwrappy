@@ -28,4 +28,5 @@ Documentation
     modules/drive
     modules/gmail
     modules/compute
+    modules/dataproc
     modules/utils
