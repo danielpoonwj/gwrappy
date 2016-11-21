@@ -19,7 +19,7 @@ from gwrappy.storage.utils import GcsResponse
 class GcsUtility:
     def __init__(self, **kwargs):
         """
-        Initializes object for interacting with Bigquery API.
+        Initializes object for interacting with Google Cloud Storage API.
 
         |  By default, Application Default Credentials are used.
         |  If gcloud SDK isn't installed, credential files have to be specified using the kwargs *json_credentials_path* and *client_id*.
@@ -114,6 +114,31 @@ class GcsUtility:
 
         return resp
 
+    def update_object(self, bucket_name, object_name, predefined_acl=None, projection=None, **object_resource):
+        """
+        Abstraction of objects().update() method. [https://cloud.google.com/storage/docs/json_api/v1/objects/update]
+
+        :param bucket_name: Bucket identifier.
+        :type bucket_name: string
+        :param object_name: Can take string representation of object resource or list denoting path to object on GCS.
+        :type object_name: list or string
+        :param predefined_acl: Apply a predefined set of access controls to this object.
+        :param projection: Set of properties to return.
+        :param object_resource: Supply optional properties [https://cloud.google.com/storage/docs/json_api/v1/objects/insert#request-body]
+        :return: Dictionary object representing object resource.
+        """
+
+        resp = self._service.objects().update(
+            bucket=bucket_name,
+            object=self._parse_object_name(object_name),
+
+            predefinedAcl=predefined_acl,
+            projection=projection,
+            body=object_resource
+        ).execute(num_retries=self._max_retries)
+
+        return resp
+
     def delete_object(self, bucket_name, object_name):
         """
         Abstraction of objects().delete() method with inbuilt iteration functionality. [https://cloud.google.com/storage/docs/json_api/v1/objects/delete]
@@ -193,9 +218,11 @@ class GcsUtility:
         )
         return resp_obj
 
-    def upload_object(self, bucket_name, object_name, read_path):
+    def upload_object(self, bucket_name, object_name, read_path, predefined_acl=None, projection=None, **object_resource):
         """
         Uploads object in chunks.
+
+        Optional parameters and valid object resources are listed here [https://cloud.google.com/storage/docs/json_api/v1/objects/insert]
 
         :param bucket_name: Bucket identifier.
         :type bucket_name: string
@@ -203,6 +230,9 @@ class GcsUtility:
         :type object_name: list or string
         :param read_path: Local path of object to upload.
         :type read_path: string
+        :param predefined_acl: Apply a predefined set of access controls to this object.
+        :param projection: Set of properties to return.
+        :param object_resource: Supply optional properties [https://cloud.google.com/storage/docs/json_api/v1/objects/insert#request-body]
         :returns: GcsResponse object.
         :raises: HttpError if non-retryable errors are encountered.
         """
@@ -216,7 +246,11 @@ class GcsUtility:
         req = self._service.objects().insert(
             bucket=bucket_name,
             name=self._parse_object_name(object_name),
-            media_body=media
+            media_body=media,
+
+            predefinedAcl=predefined_acl,
+            projection=projection,
+            body=object_resource
         )
 
         progressless_iters = 0
