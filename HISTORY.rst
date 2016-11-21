@@ -2,6 +2,13 @@
 History
 =======
 
+0.4.0 (2016-11-21)
+------------------
+* Added gwrappy.dataproc for Google Dataproc
+* Minor Changes
+    * gwrappy.storage.GcsUtility.update_object() added
+    * Added ability to set object Acl on upload with gwrappy.storage.GcsUtility.upload_object()
+
 0.3.0 (2016-10-31)
 ------------------
 * Python 3 compatibility
