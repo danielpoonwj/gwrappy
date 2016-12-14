@@ -590,11 +590,14 @@ class BigqueryUtility:
         :type wait_finish: boolean
         :param sleep_time: Time to pause (seconds) between polls.
         :type sleep_time: integer
-        :keyword writeDisposition: (Optional) Config kwarg that determines table writing behaviour.
-        :keyword sourceFormat: (Optional) Config kwarg that indicates format of input data.
-        :keyword skipLeadingRows: (Optional) Config kwarg for leading rows to skip. Defaults to 1 to account for headers if sourceFormat is CSV or default, 0 otherwise.
-        :keyword fieldDelimiter: (Optional) Config kwarg that indicates field delimiter.
-        :keyword allowQuotedNewlines: (Optional) Config kwarg indicating presence of quoted newlines in fields.
+        :keyword writeDisposition: Determines table writing behaviour.
+        :keyword sourceFormat: Indicates format of input data.
+        :keyword skipLeadingRows: Leading rows to skip. Defaults to 1 to account for headers if sourceFormat is CSV or default, 0 otherwise.
+        :keyword fieldDelimiter: Indicates field delimiter.
+        :keyword allowQuotedNewlines: Indicates presence of quoted newlines in fields.
+        :keyword allowJaggedRows: Accept rows that are missing trailing optional columns. (Only CSV)
+        :keyword ignoreUnknownValues: Allow extra values that are not represented in the table schema.
+        :keyword maxBadRecords: Maximum number of bad records that BigQuery can ignore when running the job.
         :return: JobResponse object
         """
 
@@ -618,7 +621,10 @@ class BigqueryUtility:
                         'fields': schema
                     },
                     'sourceUris': source_uris if isinstance(source_uris, list) else [source_uris],
-                    'allowQuotedNewlines': kwargs.get('allowQuotedNewlines', None)
+                    'allowQuotedNewlines': kwargs.get('allowQuotedNewlines', None),
+                    'allowJaggedRows': kwargs.get('allowJaggedRows', None),
+                    'ignoreUnknownValues': kwargs.get('ignoreUnknownValues', None),
+                    'maxBadRecords': kwargs.get('maxBadRecords', None)
                 }
             }
         }
@@ -775,6 +781,9 @@ class BigqueryUtility:
         :keyword skipLeadingRows: (Optional) Config kwarg for leading rows to skip. Defaults to 1 to account for headers if sourceFormat is CSV or default, 0 otherwise.
         :keyword fieldDelimiter: (Optional) Config kwarg that indicates field delimiter.
         :keyword allowQuotedNewlines: (Optional) Config kwarg indicating presence of quoted newlines in fields.
+        :keyword allowJaggedRows: Accept rows that are missing trailing optional columns. (Only CSV)
+        :keyword ignoreUnknownValues: Allow extra values that are not represented in the table schema.
+        :keyword maxBadRecords: Maximum number of bad records that BigQuery can ignore when running the job.
         :return: JobResponse object
         """
 
@@ -799,7 +808,10 @@ class BigqueryUtility:
                     'schema': {
                         'fields': schema
                     },
-                    'allowQuotedNewlines': kwargs.get('allowQuotedNewlines', None)
+                    'allowQuotedNewlines': kwargs.get('allowQuotedNewlines', None),
+                    'allowJaggedRows': kwargs.get('allowJaggedRows', None),
+                    'ignoreUnknownValues': kwargs.get('ignoreUnknownValues', None),
+                    'maxBadRecords': kwargs.get('maxBadRecords', None)
                 }
             }
         }
