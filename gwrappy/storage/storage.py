@@ -65,7 +65,7 @@ class GcsUtility:
             project=project_id
         )
 
-    def list_objects(self, bucket_name, max_results=None, prefix=None, filter_exp=None):
+    def list_objects(self, bucket_name, max_results=None, prefix=None, projection=None, filter_exp=None):
         """
         Abstraction of objects().list() method with inbuilt iteration functionality. [https://cloud.google.com/storage/docs/json_api/v1/objects/list]
 
@@ -75,6 +75,7 @@ class GcsUtility:
         :type max_results: integer
         :param prefix: Pre-filter (on API call) results to objects whose names begin with this prefix.
         :type prefix: string
+        :param projection: Set of properties to return.
         :param filter_exp: Function that filters entries if filter_exp evaluates to True.
         :type filter_exp: function
         :return: List of dictionary objects representing object resources.
@@ -87,7 +88,8 @@ class GcsUtility:
             self._max_retries,
             filter_exp,
             bucket=bucket_name,
-            prefix=prefix
+            prefix=prefix,
+            projection=projection
         )
 
     @staticmethod
@@ -96,7 +98,7 @@ class GcsUtility:
             object_name = quote(('/'.join(object_name)))
         return object_name
 
-    def get_object(self, bucket_name, object_name):
+    def get_object(self, bucket_name, object_name, projection=None):
         """
         Abstraction of objects().get() method with inbuilt iteration functionality. [https://cloud.google.com/storage/docs/json_api/v1/objects/get]
 
@@ -104,12 +106,14 @@ class GcsUtility:
         :type bucket_name: string
         :param object_name: Can take string representation of object resource or list denoting path to object on GCS.
         :type object_name: list or string
+        :param projection: Set of properties to return.
         :return: Dictionary object representing object resource.
         """
 
         resp = self._service.objects().get(
             bucket=bucket_name,
-            object=self._parse_object_name(object_name)
+            object=self._parse_object_name(object_name),
+            projection=projection
         ).execute(num_retries=self._max_retries)
 
         return resp
