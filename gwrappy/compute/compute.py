@@ -398,3 +398,25 @@ class ComputeEngineUtility:
             operation_name=resp['name'],
             end_state='DONE'
         )
+
+    def delete_instance(self, zone_id, instance_name):
+        """
+        Abstraction of instances().delete() method with operation polling functionality. [https://cloud.google.com/compute/docs/reference/latest/instances/delete]
+
+        :param zone_id: Zone name.
+        :param instance_name: Instance name.
+        :return: ZoneOperations Resource.
+        """
+
+        resp = self._service.instances().delete(
+            project=self.project_id,
+            zone=zone_id,
+            instance=instance_name
+        ).execute(num_retries=self._max_retries)
+
+        return self.poll_operation_status(
+            operation_type='zone',
+            location_id=zone_id,
+            operation_name=resp['name'],
+            end_state='DONE'
+        )
