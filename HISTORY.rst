@@ -2,6 +2,13 @@
 History
 =======
 
+0.4.1 (2016-12-14)
+------------------
+* Breaking Changes:
+    * gwrappy.dataproc.DataprocUtility takes project_id in its constructor rather than a method parameter.
+* gwrappy.dataproc.DataprocUtility operation/job methods return Response objects when wait_finish=True
+* pandas dependency removed from requirements.txt as its functionality is limited to specific functions and largely unnecessary otherwise.
+
 0.4.0 (2016-11-21)
 ------------------
 * Added gwrappy.dataproc for Google Dataproc
@@ -70,6 +77,5 @@ History
 
 0.1.0 (2016-08-15)
 ------------------
-
 * New and improved version of https://github.com/danielpoonwj/gcloud_custom_utilities
 * First release on PyPI.

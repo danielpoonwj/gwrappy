@@ -11,7 +11,6 @@ requirements = [
     'google-api-python-client>=1.5.1',
     'oauth2client>=2.0.1,<3.0',
     'humanize>=0.5.1',
-    'pandas>=0.18.0',
     'unicodecsv>=0.14.1',
     'pytz',
     'tzlocal',
@@ -21,7 +20,7 @@ requirements = [
 
 setup(
     name='gwrappy',
-    version='0.4.0',
+    version='0.4.1',
     description="User friendly wrapper for Google APIs",
     long_description=readme + '\n\n' + history,
     author="Daniel Poon",
@@ -38,10 +37,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5'
     ]
 )
