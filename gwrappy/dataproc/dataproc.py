@@ -234,7 +234,7 @@ class DataprocUtility:
         ).execute(num_retries=self._max_retries)
 
         if wait_finish:
-            return self.poll_operation_status(cluster_resp['name'], sleep_time)
+            return self.poll_operation_status(cluster_resp, sleep_time)
         else:
             return cluster_resp
 
