@@ -201,7 +201,7 @@ class DriveUtility:
             assert isinstance(kwargs['parents'], str)
             q += ' and "%s" in parents' % kwargs['parents']
 
-        existing_files = self.list_files(q=q)
+        existing_files = list(self.list_files(q=q))
         assert len(existing_files) <= 1, 'More than one file matches %s' % file_name
 
         media = MediaFileUpload(read_path, chunksize=self._chunksize, resumable=True)

@@ -2,6 +2,10 @@
 History
 =======
 
+0.4.3 (2016-12-16)
+------------------
+* Bugfix in gwrappy.drive.DriveUtility.upload_file()
+
 0.4.2 (2016-12-16)
 ------------------
 * Bugfix in gwrappy.dataproc.DataprocUtility.delete_cluster()
